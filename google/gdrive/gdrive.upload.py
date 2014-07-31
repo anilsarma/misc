@@ -81,8 +81,8 @@ def get_file_list(service, trashed):
 
 
 # Copy your credentials from the console
-CLIENT_ID = '622720722380-j4fspjfvd729dkdn2373j2li2mmuv8rq.apps.googleusercontent.com'
-CLIENT_SECRET = 'b2sb8BN7Frh2wZuYjPAoc8z5'
+CLIENT_ID = '<>"
+CLIENT_SECRET = '<>'
 TRASHED = "false"
 
 ### Format Conversions
