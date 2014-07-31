@@ -5,7 +5,7 @@ my @hosts = ( "ifconfig.me", "icanhazip.com", "ident.me", "ipecho.net/plain", "w
 my $path = "<some path>/router_check";
 my $ipstore = "$path/ip.data";
 
-my $gmail = "<some util to send meail>  \"Route IP Changed\" ";
+my $gmail = undef; #"<some util to send meail>  \"Route IP Changed\" ";
 
 #foreach my $h(@hosts)
 for(my $i=0; $i < $#hosts + 1; $i ++ )
@@ -35,7 +35,14 @@ for(my $i=0; $i < $#hosts + 1; $i ++ )
 		{
 		    $old = "changed from $lastip";
 		}
-		system "$gmail \"$time: New IP Address is $ip $old using host $h attempt=$i\"";
+		if( defined($gmail) )
+		{
+			system "$gmail \"$time: New IP Address is $ip $old using host $h attempt=$i\"";
+		}
+		else
+		{
+			print "$time: New IP Address is $ip $old using host $h attempt=$i\n";
+		}
 	    } 
             exit(0);
 	    last;
