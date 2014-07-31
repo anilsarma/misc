@@ -1,5 +1,11 @@
 #!/usr/bin/python
 
+#
+# Script to download attachements from gmail
+# not very good but works, enhance ments need to the 
+# message id storage, need to think of a better method then just
+# writing the entire dictionary to file everytime.
+
 import os
 import sys
 import re
