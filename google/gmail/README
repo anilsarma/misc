@@ -6,3 +6,6 @@ from the google gmail API
 
 You will need to create a project in: and thenf follow the instructions for creating a client_secret.json
 https://console.developers.google.com/project
+
+
+You will need to create an OAuth use "Client ID for native application"
