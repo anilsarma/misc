@@ -1,12 +1,20 @@
+#!/usr/bin/python 
+
+
+
 # work in progress does not yet work.
 import socket, ssl
 import pprint
 import sys
 import threading
 
+
+PORT = 10024
+
+print "starting SSL(incoming) proxy server on %d" % (PORT)
 bindsocket = socket.socket()
 bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-bindsocket.bind(('', 10024))
+bindsocket.bind(('', PORT))
 bindsocket.listen(5)
 
 
@@ -70,7 +78,7 @@ while True:
         # at this point the far end has been authenticated now we'll start a connection
         # to the next leg(un-encrypted)
         other_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        other_socket.connect(("ny3udev057", 22))
+        other_socket.connect(("localhost", 22))
 
         t1 = threading.Thread(target=process_incoming_ssl, args = (connstream, other_socket) );
         t1.daemon = True
