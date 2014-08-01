@@ -5,7 +5,17 @@
 # work in progress does not yet work.
 # usefull to encrypt a connection over a public connection
 # both ends of the connections is authenticated 
-
+#
+# to use this program, 2 set of certificates and keys are required
+# 1 for the server side, and the other for the client side(currently takes only one client certificate)
+#
+#
+#openssl genrsa -des3 -out server.orig.key 2048
+#openssl rsa -in server.orig.key -out server.key
+#openssl req -new -key server.key -out server.csr
+#openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+#
+#
 import socket, ssl
 import pprint
 import sys, time
@@ -65,16 +75,6 @@ for o, a in opts:
         else:
             assert False, "unhandled option"
 
-print "Running in Server Mode", (SERVER_MODE)
-
-
-
-print sys.argv[0], " VERSION ", VERSION
-print "starting SSL(incoming) proxy server SERVER PORT %d, Remote Port %d" % (LISTEN_PORT, REMOTE_PORT)
-bindsocket = socket.socket()
-bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-bindsocket.bind(('', LISTEN_PORT))
-bindsocket.listen(5)
 
 def hexdump(src, length=16):
 	FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
@@ -109,15 +109,22 @@ def process_sockets(input, output):
         
     
 
+print sys.argv[0], " VERSION ", VERSION
+print "Running in Server Mode", (SERVER_MODE)
+print "starting SSL(incoming) proxy server SERVER PORT %d, Remote Port %d" % (LISTEN_PORT, REMOTE_PORT)
+serversocket = socket.socket
+serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+serversocket.bind(('', LISTEN_PORT))
+serversocket.listen(5)
+
 while True:
-    newsocket, fromaddr = bindsocket.accept()
-    connstream = None
+    newsocket, fromaddr = serversocket.accept()
     
     try:
         # we will verify both sides of the socket.
 	if SERVER_MODE:
 		print "securing server connection .. "
-        	connstream = ssl.wrap_socket(newsocket,
+        	newsocket = ssl.wrap_socket(newsocket,
                                      server_side=True,
                                      certfile=MY_CERT + ".crt",
                                      keyfile =MY_CERT + ".key",
@@ -125,8 +132,6 @@ while True:
                                      ca_certs=REMOTE_CERT+".crt",
                                      cert_reqs=ssl.CERT_REQUIRED
                                      )
-	else:
-		connstream = newsocket
         
         # at this point the far end has been authenticated now we'll start a connection
         # to the next leg(un-encrypted)
@@ -145,19 +150,19 @@ while True:
         
 
 
-        t1 = threading.Thread(target=process_sockets, args = (connstream, other_socket) );
+        t1 = threading.Thread(target=process_sockets, args = (newsocket, other_socket) );
         t1.daemon = True
         t1.start()
 
-        t2 = threading.Thread(target=process_sockets, args = (other_socket, connstream) );
+        t2 = threading.Thread(target=process_sockets, args = (other_socket, newsocket) );
         t2.daemon = True
         t2.start()
     
     except:
         print "exception:" , sys.exc_info()
 	try:
-        	connstream.shutdown(socket.SHUT_RDWR)
-        	connstream.close()
+        	newsocket.shutdown(socket.SHUT_RDWR)
+        	newsocket.close()
 	except:
 		pass
 	try:
@@ -167,15 +172,3 @@ while True:
 		pass
         continue
 
-    try:
-        #print repr(connstream.getpeername())
-        #print connstream.cipher()
-        #print "PEER CERT", pprint.pformat(connstream.getpeercert())
-	pass
-    
-        #deal_with_client(connstream)
-    finally:
-	pass
-        #connstream.shutdown(socket.SHUT_RDWR)
-        #connstream.close()
-        
