@@ -2,7 +2,7 @@
 
 
 
-# work in progress does not yet work.
+# work in progress 
 # usefull to encrypt a connection over a public connection
 # both ends of the connections is authenticated 
 #
