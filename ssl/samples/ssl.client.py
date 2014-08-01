@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import socket, ssl, pprint
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,6 +18,13 @@ print repr(ssl_sock.getpeername())
 print ssl_sock.cipher()
 print pprint.pformat(ssl_sock.getpeercert())
 
+data = ssl_sock.recv(1024)
+while data and len(data)>0:
+
+	print "foo::", data
+	data = ssl_sock.recv(1024)
+
+
 ssl_sock.write("boo!")
 
 if False: # from the Python 2.7.3 docs
@@ -25,7 +34,7 @@ if False: # from the Python 2.7.3 docs
 
     # Read a chunk of data.  Will not necessarily
     # read all the data returned by the server.
-    data = ssl_sock.read()
+    data = ssl_sock.recv()
 
     # note that closing the SSLSocket will also close the underlying socket
     ssl_sock.close()
