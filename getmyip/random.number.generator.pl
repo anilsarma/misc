@@ -170,7 +170,6 @@ my $end_date = undef;
 sub usage($)
 {
     my ($msg) = @_;
-#Usage: omm-app.sh: [-l mini1|mini2|conlab|simlab] -e <executable> -d [use development, default is build ] -t <topdir> -r <lab-config-root> -b <buildir> -o <
     print STDERR "error: $msg\n" if (defined($msg));
     print STDERR "usage: $program_name <options> \n";
     print STDERR "\tversion:\n";
