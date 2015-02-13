@@ -231,7 +231,6 @@ my @samples;
     }
 }
 #die "";
-#open FILE, "/home/as64720/bin/loto.db";
 my @skip;
 my $skip =0;
 
