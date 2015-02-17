@@ -11,7 +11,7 @@ use strict;
 #   age
 #}
 (my $program_name=$0)=~ s|.+?/||;
-
+my $sort_order = "";
 package tracker;
 sub new($)
 {
@@ -143,14 +143,32 @@ sub get_trackers()
     my %trackers = %{$self->{'tracker'}};
     return \%trackers;
 }
-sub sort_trackers($$)
+sub sort_trackers_freq_age($$)
+{
+    my ($a, $b) = @_;
+    if( $a->get_freq() == $b->get_freq())
+    {
+	return $a->get_age() <=> $b->get_age()
+    }
+    return $a->get_freq() <=> $b->get_freq();
+}
+sub sort_trackers_age_freq($$)
 {
     my ($a, $b) = @_;
     if( $a->get_age() == $b->get_age())
     {
-	$b->get_freq() <=> $a->get_freq()
+	return $b->get_freq() <=> $a->get_freq()
     }
     return $a->get_age() <=> $b->get_age();
+}
+sub sort_trackers($$)
+{
+    my ($a, $b) = @_;
+    if( $sort_order eq "freq" )
+    {
+       return sort_trackers_freq_age( $a, $b );
+    }
+    return sort_trackers_age_freq( $a, $b );
 }
 
 sub tostring($)
@@ -167,6 +185,7 @@ package main;
 my $DEFAULT_SAMPLE_COUNT=100000; #120; # 2 years
 my $sample_count = $DEFAULT_SAMPLE_COUNT;
 my $end_date = undef;
+my $download = 0;
 sub usage($)
 {
     my ($msg) = @_;
@@ -176,11 +195,16 @@ sub usage($)
     print STDERR "options:\n";
     print STDERR "       -samples <sample count>  total number of samples to use default $DEFAULT_SAMPLE_COUNT\n";
     print STDERR "       -end  <date>             all samples before this date\n";
+    print STDERR "       -download  the latest database\n";
+    print STDERR "       -sort <option>   values are 'freq' default is 'age' \n";
+
     exit(0);
 }
 GetOptions(  "help"           =>   sub { usage(undef); },
 	     "samples=s"      => \$sample_count,
 	     "end_date=s"     => \$end_date,
+	     "download"       => sub { $download = 1; },
+	     "sort=s"         => \$sort_order
     )|| usage("invalid arguments");
 
 use strict;
@@ -196,10 +220,24 @@ my $db_file = "$dirname/loto_hist.db";
 my @samples;
 {
     my $file = $db_file;
-    if( !-f "$db_file")
+    if( !-f "$db_file" || $download == 1)
     {
-	#print "PIPE\n";
 	$file = "curl http://38.121.105.10/powerball/winnums-text.txt|";
+	if( $download == 1)
+	{
+            open FILE, "$file";
+	    open OUT, ">$db_file";
+            while(my $line=<FILE>)
+	    {
+		    print OUT $line;
+	    }
+	    close OUT;
+	    close FILE;
+	    if( -f "$db_file" )
+	    {
+		   $file = $db_file;
+	    }
+	}
     }
     open FILE, "$file";
     while(my $line=<FILE>)
@@ -238,7 +276,7 @@ my $red   = new container("red",   1,35);
 foreach my $line(@samples)
 #while(my $line=<FILE>)
 {
-    print "$line\n";
+	#print "$line\n";
     #$line =~ s/=>.+//;
     chomp $line;
 
@@ -256,7 +294,15 @@ foreach my $line(@samples)
 	$skip = 1;
 	next;
     }
-    print "$line\n";
+    #print "WIN $line\n";
+    my @num = ( $n1, $n2, $n3, $n4, $n5);
+    @num = sort { $a <=> $b } @num;
+    print "WIN $date;";
+    foreach my $d(@num)
+    {
+	    print "$d;";
+    }
+    print "$pb\n";
     #print "$line '$pb'\n";
     #die "$line\n$date, $n1";
     $white->age();
