@@ -69,7 +69,7 @@ sub make_printable_time($)
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($time);
     my $ptime = $hour * 60 * 60 + $min * 60 + $sec;
     $ptime *= 1000;
-    return sprintf("%04d%02d%02d", $year + 1900, $mon + 1, $mday ). " ". make_ommtime($ptime);
+    return sprintf("%04d%02d%02d", $year + 1900, $mon + 1, $mday ). " ". make_formated_time($ptime);
 }
 
 sub printable_date()
@@ -81,7 +81,7 @@ sub printable_date()
 }
 
 # all time returend in micros
-sub parse_ommtime($)
+sub parse_formated_time($)
 {
     my ($timeorig ) = @_;
     if( $timeorig =~ /(\d+):(\d+):(\d+)\.(\d+):?/ )
@@ -114,7 +114,7 @@ sub parse_ommtime($)
 }
 
 
-sub make_ommtime( $ )
+sub make_formated_time( $ )
 {
     my ($time ) = @_;
 
