@@ -15,7 +15,7 @@ sub new($$$$$$$$)
     bless $self, $name;
     return $self;
 }
-    
+
 sub date($)
 {
     my ($self) = @_;
@@ -33,40 +33,40 @@ sub red($)
     return $self->{'red'};
 }
 
-    
+
 package rfile;
 sub new($$)
 {
     my ($name, $file) = @_;
-    
+
     my $self = { 'name'=> $name, 'file' => $file };
     my @samples;
-    
+
     if( !-f "$file" )
     {
-	die "cannot open file $file";
-	
+        die "cannot open file $file";
+
     }
     else
     {
-	open FILE, "$file";
-	while(my $line=<FILE>)
-	{
-	    if( $line =~ /^(\d\d\/\d\d\/\d\d\d\d)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/ )
-	    {
-		my ($date, $n1, $n2, $n3, $n4, $n5,$pb ) = ($1, int($2), int($3), int($4), int($5), int($6), int($7));
-		chomp $line;
-		#print $line, "\n";
-		$date =~ /\d\d\/\d\d\/(\d\d\d\d)/;
-		my $year = int($1);
-		next if ($year <= 2012);
-		my @white= ($n1, $n2, $n3, $n4, $n5 );
-		#my %data = { 'white' => \@white, 'red' => $pb, 'date' => $date };
-		my $e = new db_entry( $date, $n1, $n2, $n3, $n4, $n5,$pb );
-		push @samples, $e;
-	    }
-	}
-	close FILE;
+        open FILE, "$file";
+        while(my $line=<FILE>)
+        {
+            if( $line =~ /^(\d\d\/\d\d\/\d\d\d\d)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/ )
+            {
+                my ($date, $n1, $n2, $n3, $n4, $n5,$pb ) = ($1, int($2), int($3), int($4), int($5), int($6), int($7));
+                chomp $line;
+                #print $line, "\n";
+                $date =~ /\d\d\/\d\d\/(\d\d\d\d)/;
+                my $year = int($1);
+                next if ($year <= 2012);
+                my @white= ($n1, $n2, $n3, $n4, $n5 );
+                #my %data = { 'white' => \@white, 'red' => $pb, 'date' => $date };
+                my $e = new db_entry( $date, $n1, $n2, $n3, $n4, $n5,$pb );
+                push @samples, $e;
+            }
+        }
+        close FILE;
     }
     @samples = reverse(@samples);
     $self->{'samples'} = \@samples;
@@ -74,15 +74,23 @@ sub new($$)
     bless $self, $name;
     return $self;
 }
+sub trim($$)
+{
+    my ($self, $samples) = @_;
 
+    while(scalar(@{$self->{'samples'}})>$samples)
+    {
+        shift @{$self->{'samples'}};
+    }
+}
 sub next($)
 {
     my ($self) = @_;
     my $i = $self->{'index'};
     if( $i <= scalar(@{$self->{'samples'}}))
     {
-	$self->{'index'} ++;
-	return $self->{'samples'}->[$i];
+        $self->{'index'} ++;
+        return $self->{'samples'}->[$i];
     }
     return undef;
 }
