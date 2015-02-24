@@ -7,7 +7,7 @@ sub factorial ($);
 sub factorial ($)
 {
 	my ($n) = @_;
-	if($n == 1 || $n==0)
+	if($n == 1 || $n==0 || $n < 0)
 	{
 		return 1;
 	}

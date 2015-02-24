@@ -1,6 +1,15 @@
 #!/usr/bin/perl -w
 use Getopt::Long;
 use strict;
+use tracker;
+use container;
+BEGIN
+{
+    use File::Spec::Functions qw(rel2abs);
+    use File::Basename;
+    my $dirname=dirname(rel2abs($0));
+    push @INC, $dirname;
+}
 # http://38.121.105.10/powerball/winnums-text.txt
 # http://www.powerball.com/powerball/winnums-text.txt
 #
@@ -12,175 +21,8 @@ use strict;
 #}
 (my $program_name=$0)=~ s|.+?/||;
 my $sort_order = "";
-package tracker;
-sub new($)
-{
-    my ($name, $number) = @_;
-    my @run;
-    my $self = { 'number' => $number, 'frequency' => 0, 'age' => 0, 'max' => 0, 'wt'=>0, 'run' => \@run };
-    bless $self, $name;
-    return $self;
 
-}
-sub incr_age($)
-{
-    my ($self) = @_;
-    $self->{'age'}++;
-    if( $self->{'age'} > $self->{'max'} )
-    {
-	$self->{'max'} = $self->{'age'};
-    }
-    return $self->{'age'};
-}
-sub incr_freq($)
-{
-    my ($self) = @_;
-    $self->{'frequency'}++;  
-    $self->{'wt'}++;
-    return $self->{'frequency'};
-}
-sub set_age($$)
-{
-    my ($self,$age) = @_;
-    if( $age == 0 && ($self->{'frequency'}>0) )
-    {
-	push @{$self->{'run'}},$self->{'age'}; 
-    }
-    $self->{'age'} = $age;
-}
-sub set_freq($$)
-{
-    my ($self,$frequencey) = @_;
-    $self->{'frequency'}= $frequencey;
-}
-sub get_age($)
-{
-    my ($self) = @_;
-    return $self->{'age'};
-}
-sub get_freq($)
-{
-    my ($self) = @_;
-    return $self->{'frequency'};
-}
-sub tostring($)
-{
-    my ($self) = @_;
-    my $run="";
-    my $rc=0.0;
-    my $rt=0;
-    foreach my $r(@{$self->{'run'}})
-    {
-	$run .= " $r";
-	$rt += int($r);
-	$rc= $rc + 1;
-    }
-    if($rt>0)
-    {
-	$rc =$rt/$rc;
-    }
-    my $src = sprintf("%.2f", $rc );
-    my $str =  "[" . "number=" . sprintf("%02d", int($self->{'number'}));
-    $str .= sprintf(" age=%03d", int($self->{'age'}));
-    $str .= sprintf(" frequency=%03d", $self->{'frequency'});
-    #$str .= sprintf(" wt=%03d", $self->{'wt'});
-    $str .= sprintf(" max=%03d", $self->{'max'});
 
-    my $delta =  $rc - int($self->{'age'});
-    my $sdelta = sprintf("%.2f", $delta );
-
-    $str .= sprintf(" delta=%7.2f", $delta);
-    $str .= " run=($run )~$src ". "]";
-    return $str;
-}
-
-package container;
-sub new($$$$)
-{
-    my ($name, $ball,$start, $end) = @_;
-
-    my %trackers;
-    for(my $i=$start;$i <= $end; $i++)
-    {
-	my $t = new tracker($i);
-	$trackers{$i} =  $t;
-    }
-
-    my $self = { 'ball'=>$ball, 'start' => $start, 'end' => $end, 'tracker' => \%trackers  };
-    bless $self, $name;
-    return $self;
-}
-# age everything.
-sub age($)
-{
-    my ($self) = @_;
-    my %trackers = %{$self->{'tracker'}};
-    foreach my $k ( sort {$a <=> $b} keys %trackers )
-    {
-	$trackers{$k}->incr_age();
-    }
-}
-# age everything.
-sub set_age($$$)
-{
-    my ($self,$number,$age) = @_;
-    my %trackers = %{$self->{'tracker'}};
-    
-    $trackers{$number}->set_age($age);
-    
-}
-sub update_frequency($$)
-{
-    my ($self,$number) = @_;
-    my %trackers = %{$self->{'tracker'}};
-    #print "Num=$number\n";
-    $trackers{$number}->incr_freq();
-    $trackers{$number}->set_age(0);
-}
-sub get_trackers()
-{
-    my ($self) = @_;
-    my %trackers = %{$self->{'tracker'}};
-    return \%trackers;
-}
-sub sort_trackers_freq_age($$)
-{
-    my ($a, $b) = @_;
-    if( $a->get_freq() == $b->get_freq())
-    {
-	return $a->get_age() <=> $b->get_age()
-    }
-    return $a->get_freq() <=> $b->get_freq();
-}
-sub sort_trackers_age_freq($$)
-{
-    my ($a, $b) = @_;
-    if( $a->get_age() == $b->get_age())
-    {
-	return $b->get_freq() <=> $a->get_freq()
-    }
-    return $a->get_age() <=> $b->get_age();
-}
-sub sort_trackers($$)
-{
-    my ($a, $b) = @_;
-    if( $sort_order eq "freq" )
-    {
-       return sort_trackers_freq_age( $a, $b );
-    }
-    return sort_trackers_age_freq( $a, $b );
-}
-
-sub tostring($)
-{
-    my ($self) = @_;
-    my %trackers = %{$self->{'tracker'}};
-    # sorted by age.
-    foreach my $k ( sort { sort_trackers($trackers{$a}, $trackers{$b}) } keys %trackers )
-    {
-	printf $self->{ball}." %02d=%s%s", $k , $trackers{$k}->tostring(), "\n";
-    }
-}
 package main;
 my $DEFAULT_SAMPLE_COUNT=100000; #120; # 2 years
 my $sample_count = $DEFAULT_SAMPLE_COUNT;
@@ -315,9 +157,9 @@ foreach my $line(@samples)
     $red->age();
     $red->update_frequency(int($pb));
 }
-print $white->tostring(), "\n";
+print $white->tostring($sort_order), "\n";
 print "RED---------\n";
-print $red->tostring(), "\n";
+print $red->tostring($sort_order), "\n";
 foreach my $s(@skip)
 {
     print "SKIPPED -- $s\n";
