@@ -68,6 +68,27 @@ FILE *xxfopen(const char *path, const char *mode)
  //   fprintf(stderr, "%d\n", p);
     return p;
 }
+void format_flags(size_t s, char*ptr, mode )
+{
+    ptr[0]=0;
+    if(mode&O_CREAT)
+    {
+       strcat(ptr, "|O_CREAT");
+    }
+    if(mode&O_EXCL)
+    {
+       strcat(ptr, "|O_EXCL");
+    }
+    if(mode&O_NOCTTY)
+    {
+       strcat(ptr, "|O_NOCTTY");
+    }
+    if(mode&O_TRUNC)
+    {
+       strcat(ptr, "|O_TRUNC.");
+    }
+}
+
 int open(const char*path, int flags, mode_t mode)
 {
      if(real_open==NULL) {
