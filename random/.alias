@@ -1,0 +1,15 @@
+function setdisplay()
+{
+     display="0.0"
+     if [ "$1" != "" ]; then
+         display=$1;
+     fi
+     who=`who -m`
+     echo $who
+     host=`echo $who| perl -ne '/\((.+?)\)/ && print "$1"'`
+     echo $host
+     if [ $host != "" ]; then
+         export DISPLAY=$host:$display;
+                echo "export DISPLAY=$DISPLAY";
+     fi
+}
