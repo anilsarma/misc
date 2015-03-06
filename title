@@ -1,0 +1,16 @@
+#/bin/bash
+
+
+TITLE=$*
+
+
+if [ "$TITLE" == "" ]; then
+   TITLE=`id -un`@`hostname`
+else
+   TITLE="$TITLE   "`id -un`@`hostname`
+fi
+
+echo -en "]0; $TITLE "
+echo -en "]1; $TITLE "
+echo -en "]2; $TITLE "
+export BANNER=$TITLE
