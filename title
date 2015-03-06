@@ -1,6 +1,7 @@
 #/bin/bash
 
-
+#set the title in xterm/putty etc usage title <name> will append the hostname to the title page.
+# 
 TITLE=$*
 
 
