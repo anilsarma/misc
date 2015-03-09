@@ -42,9 +42,21 @@ sub update_frequency($$)
     $trackers{$number}->incr_freq();
     $trackers{$number}->set_age(0);
 }
+sub get_age_trackers()
+{
+    my ($self,$sort) = @_;
+    my %trackers = %{$self->{'tracker'}};
+    my @result;
+    foreach my $k ( sort { sort_trackers("age", $trackers{$a}, $trackers{$b}) } keys %trackers )
+    {
+	push @result, $trackers{$k};
+    }
+    
+    return @result;
+}
 sub get_trackers()
 {
-    my ($self) = @_;
+    my ($self,$sort) = @_;
     my %trackers = %{$self->{'tracker'}};
     my @result;
     foreach my $k(sort {$a <=> $b} keys %trackers)
@@ -68,7 +80,11 @@ sub sort_trackers_age_freq($$)
     my ($a, $b) = @_;
     if( $a->get_age() == $b->get_age())
     {
-	return $b->get_freq() <=> $a->get_freq()
+	 if($b->get_freq() == $a->get_freq())
+	 {
+		 return $a->get_number() <=> $b->get_number();
+	 }
+	 return $b->get_freq() <=> $a->get_freq()
     }
     return $a->get_age() <=> $b->get_age();
 }

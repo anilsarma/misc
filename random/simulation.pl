@@ -28,18 +28,26 @@ my $db_file = "$dirname/loto_hist.db";
 my $file = new rfile($db_file);
 my $w  = new container( 'white', 1, 59 );
 
-sub get_oldest($$$)
+sub get_oldest($$$$)
 {
-    my ($data, $size, $drop) = @_;
+    my ($data, $size, $drop, $skip) = @_;
     return () if (!defined($data));
     my @sorted = sort {$b->get_age() <=> $a->get_age()} @{$data};
     
     my @result;
     my $i = $size;
+    my $sp = $skip;
     foreach my $s (@sorted)
     {
 	$drop --;
 	next if ( $drop >= 0 );
+	if( $sp >0 )
+	{
+	    $sp--;
+	    next;
+	}
+	$sp = $skip;
+	
 	last if($i<=0);
 	push @result, $s;
 	$i--;
@@ -48,9 +56,14 @@ sub get_oldest($$$)
 }
 
 my %last_numbers;
+my $age = 0;
+my $tage = $age;
+my $total_samples = 0;
+my $total_wins = 0;
 while( defined(my $entry = $file->next()))
 {
     $w->age();
+    $total_samples ++;
     my @whites = $entry->white();
     my $found = 1;
     foreach my $tw(@whites)
@@ -69,6 +82,7 @@ while( defined(my $entry = $file->next()))
     }
     if($found == 1)
     {
+	$total_wins ++;
 	print $entry->date(), "\n";
 	print "[";
 	foreach my $t (keys %last_numbers)
@@ -85,8 +99,8 @@ while( defined(my $entry = $file->next()))
     foreach my $t(@trackers)
     {
 	my $n = $t->get_number();
-	my $b = int($n/10);
-	next if ($b == 1);
+	my $b = 1;#int($n/1);
+	#next if ($b == 1);
 	my $tmp = $buckets[$b];
 	if(!defined($tmp))
 	{
@@ -101,7 +115,7 @@ while( defined(my $entry = $file->next()))
     my %last;
     foreach my $b (@buckets)
     {
-	my @tmp = get_oldest($b, 5, 0);
+	my @tmp = get_oldest($b, 35, 17, 0);
 	#print "[";
 	foreach my $t (@tmp)
 	{
@@ -110,8 +124,16 @@ while( defined(my $entry = $file->next()))
 	}
 	#print "] ";
     }
+    if($tage >0)
+    {
+	$tage --;
+	next;
+    }
+    $tage = $age;
+    
     %last_numbers = %last;
     #print "\n";
     
     #print $w->tostring(), "\n";
 }
+print "total samples = $total_samples total wins = $total_wins\n";

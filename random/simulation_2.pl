@@ -74,32 +74,34 @@ while( defined(my $entry = $file->next()))
     my @whites = $entry->white();
     my $found = 1;
     my %whites ;
-    foreach my $tw(@whites)
+    foreach my $tw(sort {$a <=> $b } @whites)
     {
 	$w->set_age(int($tw), 0 );
-	$whites{$tw} = $tw;
+	$whites{int($tw)} = $tw;
 	#print "WH $tw\n";
     }
     my @trackers = $w->get_age_trackers();
     my @set;
     if( defined($prev_trackers))
     {
-    for(my $i=0; $i < scalar(@{$prev_trackers});$i++)
-    {
-	 my $n = $prev_trackers->[$i]->get_number();    
-	 if( defined($whites{$n}))
-	 {
-		 push @set, $i;
-		 #print "$i=$n ";
-	 }
-    } 
+	for(my $i=0; $i < scalar(@{$prev_trackers});$i++)
+	{
+		#print $prev_trackers->[$i]->tostring(), "\n";
+	    my $n = int($prev_trackers->[$i]->get_number());
+	    if( exists($whites{$n}))
+	    {
+		push @set, $i;
+		#print "$i=$n ";
+	    }
+	}  
+	#exit(0);
     }
     $prev_trackers = \@trackers;
     #print "\n";
-    foreach my $n(@set)
+    foreach my $n(sort {$a <=> $b } @set)
     {
-	     print "$n ";
+	print "$n ";
     }
-     print "\n";
-     push @pos, \@set;
+    print "\n";
+    push @pos, \@set;
 }
