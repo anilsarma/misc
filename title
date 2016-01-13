@@ -1,0 +1,17 @@
+#/bin/bash
+
+#set the title in xterm/putty etc usage title <name> will append the hostname to the title page.
+# 
+TITLE=$*
+
+
+if [ "$TITLE" == "" ]; then
+   TITLE=`id -un`@`hostname`
+else
+   TITLE="$TITLE   "`id -un`@`hostname`
+fi
+
+echo -en "]0; $TITLE "
+echo -en "]1; $TITLE "
+echo -en "]2; $TITLE "
+export BANNER=$TITLE

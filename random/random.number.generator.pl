@@ -64,7 +64,9 @@ my @samples;
     my $file = $db_file;
     if( !-f "$db_file" || $download == 1)
     {
-	$file = "curl http://38.121.105.10/powerball/winnums-text.txt|";
+	    #$file = "curl http://38.121.105.10/powerball/winnums-text.txt|";
+	    $file = "curl http://www.powerball.com/powerball/winnums-text.txt |";
+
 	if( $download == 1)
 	{
             open FILE, "$file";
