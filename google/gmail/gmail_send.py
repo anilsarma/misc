@@ -21,6 +21,12 @@ from time import gmtime, strftime
 
 #default location of downloaded file
 store_dir = "./"
+home_dir = os.path.expanduser('~')
+credential_dir = os.path.join(home_dir, '.credentials')
+if not os.path.exists(credential_dir):
+     os.makedirs(credential_dir)
+
+store_dir = credential_dir
 
 email ='this is a test email to your user id of choice'
 emailTo='x@yahoo.com'
@@ -49,7 +55,7 @@ parser = argparse.ArgumentParser(parents=[tools.argparser])
 flags = parser.parse_args()
 
 # Path to the client_secret.json file downloaded from the Developer Console
-CLIENT_SECRET_FILE = store_dir + 'client_secret.json'
+CLIENT_SECRET_FILE = store_dir + '/gmail.client_secret.json'
 
 # Check https://developers.google.com/gmail/api/auth/scopes for all available scopes
 #OAUTH_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
@@ -57,7 +63,7 @@ CLIENT_SECRET_FILE = store_dir + 'client_secret.json'
 OAUTH_SCOPE = 'https://www.googleapis.com/auth/gmail.compose'
 
 # Location of the credentials storage file
-STORAGE = Storage(store_dir + 'gmail.storage')
+STORAGE = Storage(store_dir + '/gmail.storage')
 
 # Start the OAuth flow to retrieve credentials
 flow = flow_from_clientsecrets(CLIENT_SECRET_FILE, scope=OAUTH_SCOPE)
@@ -82,7 +88,8 @@ def send_email(gmail_service, to, sender, subject, body):
   email['from'] = sender
   email['subject'] = subject
   email = {'raw': base64.b64encode(email.as_string())}
-  gmail_service.users().messages().send(userId='me', body=email) .execute()
+  result = gmail_service.users().messages().send(userId='me', body=email) .execute()
+  print(result)
 
 
 
