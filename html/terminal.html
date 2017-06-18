@@ -1,0 +1,154 @@
+
+<!--
+Copyright (c) 2011 Sam Phippen <samphippen@googlemail.com>
+ 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+ 
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+ 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+--> 
+<html> 
+<head> 
+<title>Jeff Weisbein</title> 
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script> 
+<style type="text/css"> 
+	body {
+		background-color: #000
+	}
+	
+	.shell-wrap {
+  width: 750px;
+  margin: 0px auto 0 auto;
+  box-shadow: 0 0 30px rgba(0,0,0,0.4);
+ 
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
+ .shell-top-bar {
+  text-align: center;
+  color: #525252;
+  padding: 5px 0;
+  margin: 0;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+  font-size: 0.85em;
+  border: 1px solid #CCCCCC;
+  border-bottom: none;
+ 
+  -webkit-border-top-left-radius: 3px;
+  -webkit-border-top-right-radius: 3px;
+  -moz-border-radius-topleft: 3px;
+  -moz-border-radius-topright: 3px;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+ 
+  background: #f7f7f7; /* Old browsers */
+  background: -moz-linear-gradient(top,  #f7f7f7 0%, #B8B8B8 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f7f7f7), color-stop(100%,#B8B8B8)); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(top,  #f7f7f7 0%,#B8B8B8 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(top,  #f7f7f7 0%,#B8B8B8 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(top,  #f7f7f7 0%,#B8B8B8 100%); /* IE10+ */
+  background: linear-gradient(to bottom,  #f7f7f7 0%,#B8B8B8 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f7f7f7', endColorstr='#B8B8B8',GradientType=0 ); /* IE6-9 */
+}
+	.shell-body {
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  background: #141414;
+  color: #45D40C;
+  font: 0.8em 'Andale Mono', Consolas, 'Courier New';
+  line-height: 1em;
+ 
+  -webkit-border-bottom-right-radius: 3px;
+  -webkit-border-bottom-left-radius: 3px;
+  -moz-border-radius-bottomright: 3px;
+  -moz-border-radius-bottomleft: 3px;
+  border-bottom-right-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+ 
+.shell-body li:before {
+  content: '$ ';
+  position: relative;
+  left: 0;
+  top: 0;
+  overflow-x:hidden; height:400px;
+}
+ 
+.shell-body li {
+  word-wrap: break-word;
+  position: relative;
+  padding: 0 0 0 15px;
+}
+	.console {
+		font-family: courier, monospace;
+		color: #fff;
+		width:750px;
+		margin-left:auto;
+		margin-right:auto;
+		margin-top:100px;
+		font-size:14px;
+	}
+	a {
+		color: #0bc;
+		text-decoration: none;
+	}
+	#a {
+		color: #0f0;
+	}
+	#c {
+		color: #0bc;
+	}
+	#b {
+		color: #ff0096;
+	}
+</style> 
+</head> 
+<body> 
+<script type="text/javascript"> 
+
+
+		accessCountimer=setInterval(function(){update();},500); // inizialize timer for blinking cursor
+		//alert("init");
+	
+	function update()
+	{
+	//alert("init")
+		var d = new Date();
+		var n = d.getTime();
+	    i = $("#console li").size()
+		if (i > 30 )
+		{
+		    $("#console li").first().remove();
+		}
+		$("#console").append("<li>hello thee" + i + " " + n + "<text color='red'>xxx</text></li>");
+	}
+	
+ 
+</script> 
+<div class="shell-wrap">
+  <p class="shell-top-bar">/Users/pjlangley/Documents/websites/</p>
+  <ul id="console" class="shell-body">
+    <li>cd&nbsp;/Users/pjlangley/Documents/websites/codechewing.com/git/css-shell/demo/</li>
+    <li>cd ../../../../</li>
+    <li>pwd</li>
+    <li>/Users/pjlangley/Documents/websites/</li>
+  </ul>
+</div>
+
+</body> 
+</html> 
