@@ -17,14 +17,14 @@ def md5(fname):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
-def get_session_id(raw_resp):
-    soup = bs(raw_resp.text, 'lxml')
-    token = soup.find_all('input', {'name':'survey_session_id'})[0]['value']
-    return token
+def now():
+    return pd.Timestamp('now')
+
 
 def download_file( user, password, outputfilename='rail_data.zip'):
     cj = cookielib.LWPCookieJar()
 
+    # payload for submit to the website.
     payload = {
         'userName': user,      # 21st checkbox
         'password': password,  # first input-field
@@ -40,59 +40,62 @@ def download_file( user, password, outputfilename='rail_data.zip'):
         md5_old = md5(outputfilename)
 
     with requests.session() as s:
-        #resp = s.get(url)
-        #payload['survey_session_id'] = get_session_id(resp)
+        print now(), ": logging into ", url
         response_post = s.post(url, data=payload)
         #print response_post.text
         soup = bs(response_post.text, 'html.parser')
+        print now(), ": received response"
         good = False
+        # go through the anchors in the page and find the one we want.
         for i, link in enumerate(soup.findAll('a')):
             _FULLURL = link.get('href')
             if 'mt_servlet.srv?hdnPageAction=MTDevResourceDownloadTo&Category=rail' in _FULLURL:
-                print (_FULLURL)
+                #print now(), (_FULLURL)
+                print now(), "found the download link"
                 good = True
 
-
-        print s.cookies
+        print now(), "cookies", s.cookies
         if not good:
-            print ("we did  get a valid response from the server.")
+            print ("we did not get a valid response from the server or the server has changed.")
             exit(-1)
 
+        print now(), "starting download of rail data"
         r = s.get(r'https://www.njtransit.com/mt/mt_servlet.srv?hdnPageAction=MTDevResourceDownloadTo&Category=rail', stream=True)
-        #r = s.get(url, stream=True)
-        print "writing to ", os.path.abspath(outputfilename)
+        print now(), "writing to ", os.path.abspath(outputfilename)
         rail = open(outputfilename, "w")
         for chunk in r.iter_content(chunk_size=1024):
             if chunk: # filter out keep-alive new chunks
                 data.write(chunk)
                 rail.write(chunk)
         rail.close()
+        print now(), "download complete, size:", data.len, "(bytes)"
 
 
     try:
         data.seek(0)
         zip = zipfile.ZipFile(data)
         for x in zip.infolist():
-            print x.filename
+            print now(), "\tchecking archive ", x.filename
             c = zip.open(x)
-            print c.read(500)
-        print ("downloaded ", os.path.abspath(outputfilename))
+            c.read(500)
+        print now(), ("checking complete ", os.path.abspath(outputfilename))
 
+        # check the previous mdf file.
         md5_new = md5(outputfilename)
-
-        print md5_old, md5_new
+        print now(), "checksum old/new", md5_old, md5_new
         if md5_old != md5_new:
+            str = pd.Timestamp('now').strftime("%m/%d/%Y %H:%M:%S")
+            print now(), "checksum changed, updating version.txt to:", str
+
             fp = open("version.txt", "w")
-            fp.write( pd.Timestamp('now').strftime("%m/%d/%Y %H:%M:%S"))
+            fp.write( str)
+            fp.close()
+
+        else:
+            print now(), "checksum unchanged"
     except Exception as e:
         print "not a valid zip file", e
         raise  e
-    # <a href="mt_servlet.srv?hdnPageAction=MTDevResourceDownloadTo&Category=rail">Rail Data</a>&nbsp;&nbsp;(Zip format)</font></td>
-    # 		</tr>
-
-
-
-    #print res
 
 
 if __name__ == "__main__":
@@ -108,7 +111,7 @@ if __name__ == "__main__":
         # <username>,<password>
         df = pd.read_csv('.login')
         if not df.empty:
-            print df
+            #print df
             if args.user is None:
                 args.user = df.iloc[0].user
             if args.password is None:
