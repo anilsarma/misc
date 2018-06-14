@@ -40,11 +40,11 @@ def download_file( user, password, outputfilename='rail_data.zip'):
         md5_old = md5(outputfilename)
 
     with requests.session() as s:
-        print now(), ": logging into ", url
+        print now(), "logging into ", url
         response_post = s.post(url, data=payload)
         #print response_post.text
         soup = bs(response_post.text, 'html.parser')
-        print now(), ": received response"
+        print now(), "received response"
         good = False
         # go through the anchors in the page and find the one we want.
         for i, link in enumerate(soup.findAll('a')):
