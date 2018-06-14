@@ -102,6 +102,18 @@ if __name__ == "__main__":
     parser.add_argument('--output', help="output file.", required=False, default='rail_data.zip')
     args = parser.parse_args()
 
+    # we should move this to the user home directory
+    if os.path.exists(".login"):
+        # user,password
+        # <username>,<password>
+        df = pd.read_csv('.login')
+        if not df.empty:
+            print df
+            if args.user is None:
+                args.user = df.iloc[0].user
+            if args.password is None:
+                args.password = df.iloc[0].password
+
     if args.user is None:
         args.user = raw_input("njtransit user:")
 
