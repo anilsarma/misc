@@ -60,6 +60,7 @@ def download_file( user, password, outputfilename='rail_data.zip'):
 
         r = s.get(r'https://www.njtransit.com/mt/mt_servlet.srv?hdnPageAction=MTDevResourceDownloadTo&Category=rail', stream=True)
         #r = s.get(url, stream=True)
+        print "writing to ", os.path.abspath(outputfilename)
         rail = open(outputfilename, "w")
         for chunk in r.iter_content(chunk_size=1024):
             if chunk: # filter out keep-alive new chunks
