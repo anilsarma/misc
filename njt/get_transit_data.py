@@ -90,7 +90,7 @@ def download_file( user, password, outputfilename='rail_data.zip'):
             fp = open("version.txt", "w")
             fp.write( str)
             fp.close()
-
+            
         else:
             print now(), "checksum unchanged"
     except Exception as e:
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         # <username>,<password>
         df = pd.read_csv('.login')
         if not df.empty:
-            #print df
+            print df
             if args.user is None:
                 args.user = df.iloc[0].user
             if args.password is None:
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     if args.password is None:
         args.password = getpass.getpass("njtransit password:")
 
-    download_file( args.user, args.password, args.output)
+    r = download_file( args.user, args.password, args.output)
 
     exit(0)
 
