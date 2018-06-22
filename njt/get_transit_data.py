@@ -109,9 +109,21 @@ if __name__ == "__main__":
     if os.path.exists(".login"):
         # user,password
         # <username>,<password>
-        df = pd.read_csv('.login')
+        df = pd.read_csv('.login', sep='=', header=None, names=['field', 'value'])
+        #print df
+        #print df.columns
+        if 'value' in df.columns:            
+            #print "good"
+            dfx = df
+            df = df.set_index('field').T.reset_index()
+            #print "NULL", pd.isnull(dfx.value).all()
+            if dfx.shape[0]>0:
+                if pd.isnull(dfx.value).all():
+                    df = pd.read_csv('.login') # old style file
+            #print df
+
         if not df.empty:
-            print df
+            #print df
             if args.user is None:
                 args.user = df.iloc[0].user
             if args.password is None:
