@@ -41,13 +41,12 @@ def send_email(gmail_service, to, sender, subject, body):
 
 if __name__ == "__main__":
     #default location of downloaded file
-    store_dir = "./"
+
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
          os.makedirs(credential_dir)
 
-    store_dir = credential_dir
 
 
     parser = argparse.ArgumentParser(parents=[tools.argparser])
@@ -64,7 +63,7 @@ if __name__ == "__main__":
     #flags = parser.parse_args()
     #print flags
     # Path to the client_secret.json file downloaded from the Developer Console
-    CLIENT_SECRET_FILE = store_dir + '/gmail.client_secret.json'
+    CLIENT_SECRET_FILE = os.path.join(credential_dir, 'gmail.client_secret.json')
 
     # Check https://developers.google.com/gmail/api/auth/scopes for all available scopes
     #OAUTH_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
@@ -72,7 +71,7 @@ if __name__ == "__main__":
     OAUTH_SCOPE = 'https://www.googleapis.com/auth/gmail.compose'
 
     # Location of the credentials storage file
-    STORAGE = Storage(store_dir + '/gmail.storage')
+    STORAGE = Storage(os.path.join(credential_dir, 'gmail.storage'))
 
     # Start the OAuth flow to retrieve credentials
     flow = flow_from_clientsecrets(CLIENT_SECRET_FILE, scope=OAUTH_SCOPE)
