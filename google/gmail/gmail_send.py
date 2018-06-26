@@ -78,10 +78,10 @@ if __name__ == "__main__":
     if credentials is None or credentials.invalid:
       credentials = run_flow(flow, STORAGE, args, http=http)
 
-    for x in  dir(credentials):
-        print x, getattr(credentials, x)
-
-    exit(0)
+    # for x in  dir(STORAGE):
+    #     print x, getattr(STORAGE, x)
+    #
+    # exit(0)
     # Authorize the httplib2.Http object with our credentials
     http = credentials.authorize(http)
 
