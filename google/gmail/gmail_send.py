@@ -26,6 +26,11 @@ from apiclient.discovery import build
 
 def send_email(gmail_service, to, sender, subject, body):
     # send an email to me
+    if os.path.exists(body):
+        data = ""
+        with open(body, "r") as myfile:
+            data = myfile.readlines()
+        body = "".join(data)
     email = MIMEText(body)
     email['to'] = to
     email['from'] = sender
