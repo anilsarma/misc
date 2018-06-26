@@ -80,7 +80,7 @@ if __name__ == "__main__":
     # Try to retrieve credentials from storage or run the flow to generate them
     credentials = STORAGE.get()
     if credentials is None or credentials.invalid:
-      credentials = run_flow(flow, STORAGE, args, http=http)
+        credentials = run_flow(flow, STORAGE, args, http=http)
 
     # for x in  dir(STORAGE):
     #     print x, getattr(STORAGE, x)
