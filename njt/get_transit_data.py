@@ -106,10 +106,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # we should move this to the user home directory
-    if os.path.exists(".login"):
+    login_files = [ x for x in [ os.path.join( os.getenv("HOME"), ".njt", "login.preferences"), ".login" ] if os.path.exists(x ) ]
+    print login_files
+
+    if login_files: #os.path.exists(".login"):
+        login_filename = login_files[0]
         # user,password
         # <username>,<password>
-        df = pd.read_csv('.login', sep='=', header=None, names=['field', 'value'])
+        df = pd.read_csv(login_filename, sep='=', header=None, names=['field', 'value'])
         #print df
         #print df.columns
         if 'value' in df.columns:            
