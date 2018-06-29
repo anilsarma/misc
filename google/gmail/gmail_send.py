@@ -33,7 +33,7 @@ def send_email(gmail_service, to, sender, subject, body):
         body = "".join(data)
     email = MIMEText(body)
     email['to'] = to
-    email['from'] = sender
+    if sender is not None:email['from'] = sender
     email['subject'] = subject
     email = {'raw': base64.b64encode(email.as_string())}
     result = gmail_service.users().messages().send(userId='me', body=email).execute()
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[tools.argparser])
     #parser = argparse.ArgumentParser()
     parser.add_argument("--to", help="email address of the recepient", required=True)
-    parser.add_argument("--from_gmail", help="email address of the gmail user", required=True)
+    parser.add_argument("--from_gmail", help="email address of the gmail user", required=False, default=None)
     parser.add_argument("--subject", help="subject of the email", default="")
     parser.add_argument("--body", help="body of the email", default="")
 
