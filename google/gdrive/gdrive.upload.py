@@ -81,7 +81,7 @@ def get_file_list(service, trashed):
 
 
 # Copy your credentials from the console
-CLIENT_ID = '<>"
+CLIENT_ID = "<>"
 CLIENT_SECRET = '<>'
 TRASHED = "false"
 
