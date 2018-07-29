@@ -9,7 +9,9 @@ def make_db(zip_file, outputfile, outputzipfile):
     with zipfile.ZipFile(zip_file, 'r', zipfile.ZIP_DEFLATED) as archive:
         print "Content of archive downloaded\n", archive.printdir()
         print "creating SQL Lite database ", outputfile
+        df = pd.read_csv('station_codes.txt');
         with sqlite3.connect(outputfile) as conn:
+            df.to_sql('station_codes', conn, if_exists="replace", index=False )
             for x in archive.namelist():
                 #print x
                 f=archive.open(x)    
