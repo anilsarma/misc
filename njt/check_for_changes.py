@@ -35,18 +35,28 @@ def make_db(zip_file, outputfile, outputzipfile):
             print archive.printdir()
     os.remove(outputfile)
 
+def system(cmd):
+    print("running system command ", cmd )
+    ret = os.system(cmd)
+    print("running system command ", cmd , "result", ret)
+    if ret !=0:
+       raise Exception("command cmd failed code={}".format(ret))
+  
 if __name__ == "__main__":
     os.system("git pull ")
     os.system("python get_transit_data.py")
     result = subprocess.check_output(['git', 'status'])
     tokens = result.split("\n")
     #make_db(r'rail_data.zip', "rail_data.db", "rail_data_db.zip" )
+    #tokens.append('modified: rail_data.zip')
     for t in tokens:
         if 'rail_data.zip' in t:
             if 'modified:' in t:
                 print "rail_data.zip modified "
+                print "making the sql files ... "
                 make_db(r'rail_data.zip', "rail_data.db", "rail_data_db.zip" )
-                os.system("git add rail_data.zip version.txt rail_data_db.zip")
-                os.system("git commit -m 'auto commit {}'".format( pd.Timestamp('now')))
-                os.system("git push")
+                
+                system("git add rail_data.zip version.txt rail_data_db.zip")
+                system("git commit -m 'auto commit {}'".format( pd.Timestamp('now')))
+                #os.system("git push")
                 break
