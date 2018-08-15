@@ -58,5 +58,5 @@ if __name__ == "__main__":
                 
                 system("git add rail_data.zip version.txt rail_data_db.zip")
                 system("git commit -m 'auto commit {}'".format( pd.Timestamp('now')))
-                #os.system("git push")
+                os.system("git push")
                 break
