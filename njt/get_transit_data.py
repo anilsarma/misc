@@ -21,7 +21,7 @@ def now():
     return pd.Timestamp('now')
 
 
-def download_file( user, password, outputfilename='rail_data.zip'):
+def download_file( user, password, outputfilename='rail_data.zip', type='rail'):
     cj = cookielib.LWPCookieJar()
 
     # payload for submit to the website.
@@ -31,7 +31,7 @@ def download_file( user, password, outputfilename='rail_data.zip'):
         }
     url = r'https://www.njtransit.com/mt/mt_servlet.srv?hdnPageAction=MTDevLoginSubmitTo'
     if payload['password'] is None:
-        print "password is not set"
+        print ("password is not set")
         exit(1)
 
     data = StringIO.StringIO()
@@ -40,11 +40,11 @@ def download_file( user, password, outputfilename='rail_data.zip'):
         md5_old = md5(outputfilename)
 
     with requests.session() as s:
-        print now(), "logging into ", url
+        print (now(), "logging into ", url)
         response_post = s.post(url, data=payload)
         #print response_post.text
         soup = bs(response_post.text, 'html.parser')
-        print now(), "received response"
+        print (now(), "received response")
         good = False
         # go through the anchors in the page and find the one we want.
         for i, link in enumerate(soup.findAll('a')):
@@ -60,8 +60,8 @@ def download_file( user, password, outputfilename='rail_data.zip'):
             exit(-1)
 
         print now(), "starting download of rail data"
-        r = s.get(r'https://www.njtransit.com/mt/mt_servlet.srv?hdnPageAction=MTDevResourceDownloadTo&Category=rail', stream=True)
-        print now(), "writing to ", os.path.abspath(outputfilename)
+        r = s.get(r'https://www.njtransit.com/mt/mt_servlet.srv?hdnPageAction=MTDevResourceDownloadTo&Category={}'.format(type), stream=True)
+        print (now(), "writing to ", os.path.abspath(outputfilename))
         rail = open(outputfilename, "w")
         for chunk in r.iter_content(chunk_size=1024):
             if chunk: # filter out keep-alive new chunks
@@ -87,7 +87,10 @@ def download_file( user, password, outputfilename='rail_data.zip'):
             str = pd.Timestamp('now').strftime("%m/%d/%Y %H:%M:%S")
             print now(), "checksum changed, updating version.txt to:", str
 
-            fp = open("version.txt", "w")
+            suffix = ""
+            if type != "rail":
+                suffix = "_" + type
+            fp = open("version{}.txt".format(suffix), "w")
             fp.write( str)
             fp.close()
             
@@ -103,6 +106,7 @@ if __name__ == "__main__":
     parser.add_argument('--user', help="username.", required=False)
     parser.add_argument('--password', help="password.", required=False)
     parser.add_argument('--output', help="output file.", required=False, default='rail_data.zip')
+    parser.add_argument('--type', help="rail/bus", required=False, default='rail')
     args = parser.parse_args()
 
     # we should move this to the user home directory
@@ -140,7 +144,7 @@ if __name__ == "__main__":
     if args.password is None:
         args.password = getpass.getpass("njtransit password:")
 
-    r = download_file( args.user, args.password, args.output)
+    r = download_file( args.user, args.password, args.output, args.type)
 
     exit(0)
 

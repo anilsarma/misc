@@ -3,6 +3,8 @@ import subprocess
 import pandas as pd
 import zipfile, StringIO
 import sqlite3
+import argparse
+
 
 
 def make_db(zip_file, outputfile, outputzipfile):
@@ -43,20 +45,33 @@ def system(cmd):
        raise Exception("command cmd failed code={}".format(ret))
   
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--make', help="rail/bus", required=False, default=None)
+    parser.add_argument('--type', help="rail/bus", required=False, default='rail')
+    args = parser.parse_args()
+
+
+    zip_file = "{}_data.zip".format(args.type)
+    db_file = "{}_data_db.zip".format(args.type)
+    if( args.make is not None) :
+        print(zip_file)
+        make_db(zip_file, "{}_data.db".format(args.type), db_file)
+        exit(0)
+
     os.system("git pull ")
-    os.system("python get_transit_data.py")
+    os.system("python get_transit_data.py --type {} --output {}".format(args.type, zip_file))
     result = subprocess.check_output(['git', 'status'])
     tokens = result.split("\n")
     #make_db(r'rail_data.zip', "rail_data.db", "rail_data_db.zip" )
     #tokens.append('modified: rail_data.zip')
     for t in tokens:
-        if 'rail_data.zip' in t:
+        if zip_file in t:
             if 'modified:' in t:
-                print "rail_data.zip modified "
+                print "{} modified ".format (zip_file)
                 print "making the sql files ... "
-                make_db(r'rail_data.zip', "rail_data.db", "rail_data_db.zip" )
+                make_db(zip_file, "{}_data.db".format(args.type), db_file )
                 
-                system("git add rail_data.zip version.txt rail_data_db.zip")
+                system("git add  version.txt {} {} ".format(zip_file, db_file ))
                 system("git commit -m 'auto commit {}'".format( pd.Timestamp('now')))
                 os.system("git push")
                 break
