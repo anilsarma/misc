@@ -22,8 +22,8 @@ class YahooFinance:
         with  requests.get(self.url_symbol) as response:
             print(response.cookies)
             self.cookies = response.cookies
-            text = response.text#.decode('utf-8')
-            print(text)
+            text = response.text
+
             # find this pattern "CrumbStore": {"crumb": "DCtHapvvNjt"}, "
             pat = re.compile('CrumbStore":{"crumb":"(.+?)"},')
             matcher = pat.findall(text)
