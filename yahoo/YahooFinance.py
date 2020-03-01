@@ -18,6 +18,7 @@ class YahooFinance:
         #elf.symbol = None
         self.cookies = None
         self.crumb = None
+        self.summary = {}
 
     def init(self, symbol):
         #self.start_date = pd.to_datetime(start_date)#.replace(hour=0, minute=0, second=0)
@@ -47,6 +48,9 @@ class YahooFinance:
     def get_epoch(datetime):
         return int((pd.to_datetime(datetime)- pd.Timestamp("1970-01-01")).total_seconds())
 
+
+
+
     def get_hist_data(self, symbol, start_date, end_date = None, event="history", interval="1d"):
         if self.crumb is None:
             self.init(symbol)
@@ -58,7 +62,7 @@ class YahooFinance:
                                                 end_epoch=YahooFinance.get_epoch(end_date),
                                                 symbol=symbol,
                                                 event=event, crumb=self.crumb, interval=interval)
-        #print(url)
+
         cookies = { x.name: x.value for x in self.cookies }
         response = requests.get(url, cookies=cookies)
         df = pd.read_csv(io.StringIO(response.text))
@@ -75,22 +79,37 @@ class YahooFinance:
         return self.get_hist_data(symbol, start_date, end_date, event="split    ", interval="1d")
 
     def get_details(self, symbol):
-        if self.crumb is None:
+        if self.crumb is None or self.cookies.is_expired():
             self.init(symbol)
         url_symbol = YahooFinance.url_base.format(symbol)
         cookies = {x.name: x.value for x in self.cookies}
         response = requests.get(url_symbol, cookies=cookies)
         parser = bs(response.text, 'html.parser')
 
-        tags = ["PREV_CLOSE-value", "OPEN-value", "BID-value", "ASK-value", "TD_VOLUME-value", "AVERAGE_VOLUME_3MONTH-value"]
+        tags = ["PREV_CLOSE-value", "OPEN-value", "BID-value", "ASK-value", "TD_VOLUME-value",
+                "AVERAGE_VOLUME_3MONTH-value", "MARKET_CAP-value", "BETA_5Y-value", "PE_RATIO-value",
+                "EARNINGS_DATE-value",
+                "ONE_YEAR_TARGET_PRICE-value", "EX_DIVIDEND_DATE-value"]
         for t in tags:
             td = parser.find("td", { "data-test": t})
-            print (t, "=", td.find("span").string)
+            value = td.find("span").string
+            print (t, "=", value)
+            self.summary[t] = value
 
-        tags = ["DAYS_RANGE-value", "FIFTY_TWO_WK_RANGE-value"]
+        tags = ["DAYS_RANGE-value", "FIFTY_TWO_WK_RANGE-value",  "DIVIDEND_AND_YIELD-value",
+                ]
         for t in tags:
             td = parser.find("td", { "data-test": t})
-            print (t, "=", td.string)
+            value = td.string
+            print (t, "=", value)
+            self.summary[t] = value
+
+        # get the current quotes.
+        div = parser.find("div", {"id": "quote-header-info"})
+        spans = div.findAll("span")
+        current = spans[1].string
+        self.summary['LAST_PRICE']=float(current)
+
 
 if __name__ == "__main__":
     y = YahooFinance()
