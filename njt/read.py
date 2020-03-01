@@ -45,8 +45,16 @@ def dump_table(conn, name):
     print("Table " + name)
     print(df.head(6))
     return df
+def time_function(func):
+    def wrapped_function(*args, **kwargs):
+        start_time = pd.Timestamp.now()
+        ret =  func(*args, **kwargs)
+        stop_time = pd.Timestamp.now()
+        print("total time cost:", stop_time - start_time)
+        return ret
+    return wrapped_function
 
-
+@time_function
 def sql(conn, query):
     df = pd.read_sql_query(query, conn)
     print(query)
@@ -165,44 +173,167 @@ sql_trips = "select distinct trip_id from trips, routes where routes.route_short
 sql_stop_times = "select * from stop_times where trip_id in ({sql_trips})"
 sql_stop_times = sql_stop_times.replace("{sql_trips}", sql_trips).replace("{services}", sql_services)
 df_stop_times = sql(conn, sql_stop_times)
-for key, df in df_stop_times.groupby('trip_id'):
-    df = df.sort_values("stop_sequence")
-    dfx = df[df.stop_id.isin(df_stop0.stop_id)]
-    dfy = df[df.stop_id.isin(df_stop1.stop_id)]
-    if not dfx.empty and not dfy.empty:
-        if (dfx.iloc[0].stop_sequence < dfy.iloc[0].stop_sequence):
-            print(pd.concat([dfx, dfy]))
+# for key, df in df_stop_times.groupby('trip_id'):
+#     df = df.sort_values("stop_sequence")
+#     dfx = df[df.stop_id.isin(df_stop0.stop_id)]
+#     dfy = df[df.stop_id.isin(df_stop1.stop_id)]
+#     if not dfx.empty and not dfy.empty:
+#         if (dfx.iloc[0].stop_sequence < dfy.iloc[0].stop_sequence):
+#             print(pd.concat([dfx, dfy]))
 
 sql_dx = "select stop_id from stops where stop_name like '%willow ave at 19th st%' "
 sql_dy = "select stop_id from stops where stop_name like '%willow ave at 15th st%' "
 sql_stop_times_dx = "select * from stop_times where trip_id in ({sql_trips}) and stop_id in ( {sql_dx} )"
 sql_stop_times_dy = "select * from stop_times where trip_id in ({sql_trips}) and stop_id in ( {sql_dy} )"
 
-sql_query = "select dx.trip_id, * from ( {stop_times_dx} )as dx, ( {stop_times_dy} )as dy  where  dx.stop_sequence < dy.stop_sequence and dx.trip_id = dy.trip_id"
+sql_query_template = "select dx.trip_id, * from ( {stop_times_dx} )as dx, ( {stop_times_dy} )as dy  where  dx.stop_sequence < dy.stop_sequence and dx.trip_id = dy.trip_id"
 
 var = {
-    '{sql_trips}': sql_trips,
-    "{services}": sql_services,
-    "{sql_dx}": sql_dx,
-    "{sql_dy}": sql_dy,
-    "{stop_times_dy}": sql_stop_times_dy,
-    "{stop_times_dx}": sql_stop_times_dx
+    'sql_trips': sql_trips,
+    "services": sql_services,
+    "sql_dx": sql_dx,
+    "sql_dy": sql_dy,
+    "stop_times_dy": sql_stop_times_dy,
+    "stop_times_dx": sql_stop_times_dx
 }
+
+
 #sql_query = sql_query.replace("{sql_trips}", sql_trips).replace("{services}", sql_services).replace("{dx}",
 #                                                                                                    sql_dx).replace(
 #    "{dy}", sql_dy).replace("{stop_times_dy}", sql_stop_times_dy).replace("{stop_times_dx}", sql_stop_times_dx)
-while  True:
-    found = False
-    for x in var:
-        if x in sql_query:
-            sql_query = sql_query.replace(x, var[x])
-            #print (sql_query)
-            found = True
-    if not found:
-        break
+def sub(query, var):
+    while  True:
+        found = False
+
+        for x in var:
+            y = "{" + x + "}"
+            if y in query:
+                query = query.replace(y, var[x])
+                found = True
+        if not found:
+            break
+    return query
+sql_query = sub(sql_query_template, var)
+# while  True:
+#     found = False
+#     for x in var:
+#         if x in sql_query:
+#             sql_query = sql_query.replace(x, var[x])
+#             #print (sql_query)
+#             found = True
+#     if not found:
+#         break
 
 # sql_stop_times_dy = sql_stop_times_dy.replace("{sql_trips}", sql_trips).replace("{services}", sql_services).replace("{dx}", sql_dx).replace("{dy}", sql_dy)
 
-print(sql(conn, sql_query))
+#print(sql(conn, sql_query))
 
+
+
+sql_routes_tempalte = "select distinct route_short_name, trip_headsign from trips, routes where trip_id in ( select trip_id from ( {sql_query_template} ) as  query ) and trips.route_id = routes.route_id"
+
+var['sql_query_template'] = sql_query_template
+
+# find all busses that run today.
+# query starts here
+sql_services = "select service_id from calendar_dates where date='20190415'"
+sql_dy = "select * from stops where stop_name like '%WASHINGTON BLVD AT NEWPORT%' "
+sql_dx = "select * from stops where stop_name like '%18%'"
+
+routes_join_starts = "select dx.stop_id as start_stop_id, stop_times.trip_id, arrival_time as start_time, stop_times.stop_sequence as start_sequence from ( {sql_dx} ) as dx inner join stop_times on dx.stop_id = stop_times.stop_id  "
+routes_join_stops = "select dy.stop_id as stop_id, stop_times.trip_id, arrival_time as stop_time, stop_times.stop_sequence as stop_sequence from ( {sql_dy} ) as dy inner join stop_times on dy.stop_id = stop_times.stop_id  "
+
+#routes_join_stops = "select * from ( {sql_dx} ) as dx inner join stop_times on dx.stop_id = stop_times.stop_id  "
+
+routes_join = "select * from (select * from ( {routes_join_starts} ) as st inner join ( {routes_join_stops}) as sp on st.trip_id = sp.trip_id) as x where x.start_sequence < x.stop_sequence"
+route_with_trip = "select * from ({routes_join}) as rt inner join trips on trips.trip_id = rt.trip_id and trips.service_id in ( {sql_services} )"
+route_with_route = "select * from ({route_with_trip}) as trip inner join routes on routes.route_id = trip.route_id"
+
+
+var['routes_join_starts']=routes_join_starts
+var['routes_join_stops']=routes_join_stops
+var['routes_join'] = routes_join
+var['sql_services'] = sql_services
+var['sql_dx'] = sql_dx
+var['sql_dy'] = sql_dy
+var['route_with_trip'] = route_with_trip
+var['sql_services'] = sql_services
+
+sql_stops = ''' select * from stops inner join stop_times on stops.stop_id = stop_times.stop_id and  stop_name like '%{stop_name}%' '''
+
+starts = sql_stops.format(stop_name='WASHINGTON BLVD')
+stops  = sql_stops.format(stop_name='OLD BRIDGE')
+
+
+sql_query = ''' 
+  select st.stop_name as start_stop_name, st.stop_id as start_stop_id, st.arrival_time as start_time, * from ({starts}) as st 
+      inner join ({stops}) as sp on st.trip_id = sp.trip_id and st.stop_sequence < sp.stop_sequence
+      inner join trips on trips.trip_id = st.trip_id
+      inner join routes on routes.route_id = trips.route_id
+      inner join calendar_dates on trips.service_id = calendar_dates.service_id and calendar_dates.date={date}
+'''
+
+sql_query = ''' 
+  select st.stop_name as start_stop_name, st.stop_id as start_stop_id, st.arrival_time as start_time,
+        sp.arrival_time as stop_time, st.trip_id as trip_id 
+  from ({starts}) as st 
+      inner join ({stops}) as sp on st.trip_id = sp.trip_id and st.stop_sequence < sp.stop_sequence
+      and st.trip_id in ( select trip_id from trips where service_id in ( select service_id from calendar_dates where date='{date}') )
+'''
+
+sql_stops = ''' select stop_id from stops where  stop_name like '%{stop_name}%' '''
+
+starts = sql_stops.format(stop_name='WASHINGTON BLVD')
+stops  = sql_stops.format(stop_name='OLD BRIDGE')
+
+sql_query = ''' 
+select * from stop_times where trip_id in ( select trip_id from trips where service_id in ( select service_id from calendar_dates where date='{date}') ) and stop_id in ( {starts} )
+'''
+
+my_starts = sql_query.format(starts=starts,  date='20190416')
+my_stops = sql_query.format(starts=stops,  date='20190416')
+sql_query = ''' 
+select * from ( {my_starts} ) as st, ( {my_stops}) as sp where st.stop_sequence < sp.stop_sequence
+'''
+
+sql_query = sql_query.format(my_starts =my_starts, my_stops=my_stops)
+
+print(sql(conn, my_stops
+          ).shape)
+sql_query = '''select stop_times.trip_id, stop_times.arrival_time,  stop_times.stop_id,  stop_times.stop_sequence, stops.stop_name   
+               from  stop_times, stops where stop_times.stop_id in ( select stop_id from stops where stop_name like '%{station}%' )
+                and stops.stop_id = stop_times.stop_id 
+               '''
+
+sql_start = sql_query.format(station="race track") #today_trips=today_trips)
+sql_stop = sql_query.format(station="washington blvd") #, today_trips=today_trips)
+cols = ''' st.trip_id as trip_id,st.arrival_time as start_time,sp.arrival_time as stop_time,trip_headsign,route_short_name'''
+# st.stop_name as start_name,
+# sp.stop_name as stop_name,
+# st.stop_sequence as start_sequence,
+# sp.stop_sequence as stop_sequence,
+
+cols = ''' st.trip_id as trip_id,
+st.arrival_time as start_time,
+sp.arrival_time as stop_time,
+trip_headsign,
+route_short_name
+'''
+
+sql_query = '''
+select * from ( {sql_start} ) as st,
+              ( {sql_stop}  ) as sp, 
+              trips,   
+              routes,
+              calendar_dates           
+              where        
+              st.trip_id = sp.trip_id and
+              st.stop_sequence < sp.stop_sequence and
+              st.trip_id = trips.trip_id and
+              trips.route_id = routes.route_id   and
+              calendar_dates.service_id = trips.service_id and
+              calendar_dates.date='20190415'         
+'''
+sql_query = sql_query.format(sql_start =sql_start, sql_stop=sql_stop)
+sql(conn, sql_query)
 conn.close()
