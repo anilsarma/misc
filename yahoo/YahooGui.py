@@ -245,9 +245,13 @@ class App(QWidget):
             data =  [ mapping[x](result) if x in mapping else "" for x in headers]
             details = [ QStandardItem(str(x)) for x in data]
             [d.setTextAlignment(Qt.AlignCenter) for d in details]
+
             src_index = self.get_row_index("Source")
             status_index = self.get_row_index("Status")
             change_index = self.get_row_index("change")
+            synp_index = self.get_row_index("SynP")
+            bid_index = self.get_row_index("Bid")
+            ask_index = self.get_row_index("Ask")
             for x in range(0, self.model.rowCount()):
                 index = self.model.index(x, 1)
                 table_symbol = index.data()
@@ -260,12 +264,20 @@ class App(QWidget):
                         tm = mapping['timestamp'](result)
                         delta = now - pd.to_datetime(tm)
                         self.set_color(index, Qt.green if delta < (timeout + pd.Timedelta("10 seconds")) else Qt.gray)
-                    if y == status_index:
-                        status = self.model.index(x, status_index).data()
-                        self.set_color(index, Qt.green if "OPEN" in status.upper() else Qt.red)
-                    if y == change_index:
-                        status = self.model.index(x, change_index).data()
-                        self.set_color(index, Qt.red if "-" in status.upper() else Qt.green)
+
+
+
+                status = self.model.index(x, status_index)
+                self.set_color(status, Qt.green if "OPEN" in status.data().upper() else Qt.red)
+
+                change_idx = self.model.index(x, change_index)
+                self.set_color(change_idx, Qt.red if "-" in change_idx.data().upper() else Qt.green)
+
+
+                # color relative to close price
+                self.set_color(self.model.index(x, synp_index), Qt.red if "-" in change_idx.data().upper() else Qt.green)
+                self.set_color(self.model.index(x, bid_index), Qt.red if "-" in change_idx.data().upper() else Qt.green)
+                self.set_color(self.model.index(x, ask_index), Qt.red if "-" in change_idx.data().upper() else Qt.green)
 
         except:
             traceback.print_exc()
