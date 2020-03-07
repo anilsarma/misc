@@ -11,7 +11,8 @@ import os
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-
+#from PyQt5.QtWebKit import *
+from PyQt5.QtWebEngineWidgets   import *
 timeout = pd.Timedelta("5 seconds")
 open_time = "9:30"
 close_time = "16:00"
@@ -60,8 +61,25 @@ class Worker(QRunnable):
             self.signals.finished.emit (self.symbol)
 
 
+class Second(QMainWindow):
+    def __init__(self, parent=None):
+        super(Second, self).__init__(parent)
+       # layout = QVBoxLayout(self)
+
+        web = QWebEngineView(self)
+        #web.resize(1024, 750);
+        web.showMaximized()
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        web.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        #web.addUrl("http://google.com")
+        #self.addWidget(web)
+        #layout.setContentsMargins(0,0,0,0)
+
+        #self.setLayout(layout)
+        web.load(QUrl("http://google.com"))
 
 
+#self.ui.lineEdit.setText("")
 class App(QWidget):
     def __init__(self, proxies=None):
         super(App, self).__init__()
@@ -123,15 +141,25 @@ class App(QWidget):
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
         table.setSelectionMode(QAbstractItemView.SingleSelection)
+        table.doubleClicked.connect(self.on_table_double_clcked)
+        #table.clicked()
+        #table.pressed.connect(self.on_contextMenuEvent)
+        self.table = table
         model.setColumnCount(len(self.headers))
         self.layout.addWidget(table)
         self.model= model
+
+
 
         model.appendRow(self.get_details("OEF"))
        # table.verticalHeader().setDefaultSelectionSize(20)
         table.verticalHeader().setVisible(False)
         [table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch) for i in range(0, len(self.headers))]
 
+        self.browser = QWebEngineView(self)
+        self.browser.resize(2000, 800)
+        self.layout.addWidget(self.browser)
+        self.browser.load(QUrl("http://google.com"))
         self.refresh_button = QPushButton("Refresh", self)
         self.refresh_button.setToolTip("Refresh Market data")
         self.layout.addWidget(self.refresh_button)
@@ -139,6 +167,21 @@ class App(QWidget):
 
 
         self.show()
+
+    def on_contextMenuEvent(self, index):
+        self.menu = QMenu(self)
+        removeEntry = QAction('Delete', self)
+        removeEntry.triggered.connect(lambda: self.remove_row(index))
+        self.menu.addAction(removeEntry)
+        # add other required actions
+        self.menu.popup(QCursor.pos())
+
+    def remove_row(self, index):
+        print("here", index)
+        try:
+            print(self.model.removeRow(index.row()))
+        except:
+            traceback.print_exc()
 
 
     def check_for_expired(self):
@@ -174,7 +217,22 @@ class App(QWidget):
                 del self.pending_req[symbol]
 
 
+    def on_mouse_pressed(self, **kwargs):
+        try :
+            print("on_mouse_pressed", kwargs)
+        except:
+            traceback.print_exc()
 
+    def on_table_double_clcked(self, index):
+        print("double clicked", index.row(), index.column())
+        try :
+            #browser = Second(self)
+            #browser = QWebEngineView(self)
+            self.browser.load(QUrl("http://google.com"))
+            #browser.show()
+            print("double clicked", index.row(), index.column())
+        except:
+            traceback.print_exc()
 
     @pyqtSlot()
     def on_click_refresh(self):
