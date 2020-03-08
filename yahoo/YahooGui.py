@@ -7,12 +7,13 @@ import sys
 import traceback
 import time
 import os
-
+# require pip install PyQtWebEngine
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 #from PyQt5.QtWebKit import *
 from PyQt5.QtWebEngineWidgets   import *
+from PyQt5 import *
 timeout = pd.Timedelta("5 seconds")
 open_time = "9:30"
 close_time = "16:00"
@@ -54,6 +55,7 @@ class Worker(QRunnable):
             result = { 'bid': bid, 'ask': ask, 'last': last, 'open': open, 'close': prev_close, 'change': change, 'close_status': close_status, 'time': qtime}
             self.signals.result.emit (self.symbol, result)
         except:
+
             traceback.print_exc()
             exectype, value = sys.exc_info()[:2]
             self.signals.error.emit( (exectype, value, traceback.format_exc()))
@@ -61,21 +63,32 @@ class Worker(QRunnable):
             self.signals.finished.emit (self.symbol)
 
 
-class Second(QMainWindow):
+class Second(QDialog):#QMainWindow QDialog
     def __init__(self, parent=None):
         super(Second, self).__init__(parent)
-       # layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self)
+        layout.setSizeConstraint(QLayout.SetNoConstraint)
 
         web = QWebEngineView(self)
-        #web.resize(1024, 750);
-        web.showMaximized()
+        self.webSettings = web.settings()
+        self.webSettings.setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.webSettings.setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        layout.addWidget(web)
+        #layout.setRowStretch(2, 2)
+        layout.setSizeConstraint(QLayout.SetNoConstraint)
+        web.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.resize(1024, 750);
+
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         web.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.webSettings.setAttribute(QWebEngineSettings.ShowScrollBars, True)
+        #web.page().mainFrame().setScrollBarPolicy(Qt.Vertical, Qt.ScrollBarAsNeeded)
+        #web.setScrollBarPolicy(Qt.Horizontal, Qt.ScrollBarAsNeeded)
         #web.addUrl("http://google.com")
         #self.addWidget(web)
         #layout.setContentsMargins(0,0,0,0)
 
-        #self.setLayout(layout)
+        self.setLayout(layout)
         web.load(QUrl("http://google.com"))
 
 
@@ -103,19 +116,41 @@ class App(QWidget):
         self.timer.timeout.connect(self.recurring_timer)
         self.timer.start()
 
+    def is_regular_trading_hours(self):
+        now = pd.to_datetime(datetime.datetime.now())
+        ot = pd.to_datetime(open_time)
+        ct = pd.to_datetime(close_time)
+        if pd.to_datetime(now).date() in df_holiday.index:
+            return False
+
+        weekday =  now.date().weekday()
+        if weekday in [ 5, 6]:
+            #print("week end")
+            return False
+        if now >= ot and now <= ct:
+            return True
+
+        return True
+
+    def get_sleep_time(self):
+        if self.is_regular_trading_hours():
+            return  pd.Timedelta("5 seconds")
+
+        now = pd.to_datetime(datetime.datetime.now())
+        ot = pd.to_datetime(open_time)
+        delta = ot - now
+        if delta >=pd.Timedelta("0 seconds") and delta < pd.Timedelta("15 minutes"):
+            return delta
+        return pd.Timedelta("15 minutes")
+
     def recurring_timer(self):
         global timeout
         try:
-            ot = pd.to_datetime(open_time)
-            ct = pd.to_datetime(close_time)
-            now = pd.to_datetime(datetime.datetime.now())
-            if now >= ot and now <= ct:
-                timeout = pd.Timedelta("5 seconds")
-            else:
-                timeout = pd.Timedelta("15 minutes")
+            timeout = self.get_sleep_time()
             self.check_for_expired()
         except:
             traceback.print_exc()
+
 
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -156,10 +191,10 @@ class App(QWidget):
         table.verticalHeader().setVisible(False)
         [table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch) for i in range(0, len(self.headers))]
 
-        self.browser = QWebEngineView(self)
-        self.browser.resize(2000, 800)
-        self.layout.addWidget(self.browser)
-        self.browser.load(QUrl("http://google.com"))
+        #self.browser = QWebEngineView(self)
+        #self.browser.resize(2000, 800)
+        #self.layout.addWidget(self.browser)
+        #self.browser.load(QUrl("http://google.com"))
         self.refresh_button = QPushButton("Refresh", self)
         self.refresh_button.setToolTip("Refresh Market data")
         self.layout.addWidget(self.refresh_button)
@@ -226,10 +261,10 @@ class App(QWidget):
     def on_table_double_clcked(self, index):
         print("double clicked", index.row(), index.column())
         try :
-            #browser = Second(self)
+            browser = Second(self)
             #browser = QWebEngineView(self)
-            self.browser.load(QUrl("http://google.com"))
-            #browser.show()
+            #self.browser.load(QUrl("http://google.com"))
+            browser.show()
             print("double clicked", index.row(), index.column())
         except:
             traceback.print_exc()
@@ -356,6 +391,8 @@ class App(QWidget):
 
 
 if __name__ == "__main__":
+    df_holiday = pd.read_csv("holiday.csv", index_col=["date"])
+    print(df_holiday.index)
     print(open_time, close_time)
 
     qapp = QApplication(sys.argv)
