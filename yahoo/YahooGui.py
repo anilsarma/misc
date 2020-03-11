@@ -36,7 +36,7 @@ class Worker(QRunnable):
     def run(self):
         try:
             if self.symbol not in self.parent.yp_cache:
-                print("Checking cache ... ")
+                #print("Checking cache ... ")
                 self.parent.yp_cache[self.symbol] = yp.YahooFinance(proxies=self.proxies, verify=False)
             yahoo = self.parent.yp_cache [self.symbol]
             yahoo.get_details(self.symbol, timedelta=timeout)
@@ -130,7 +130,7 @@ class App(QWidget):
         if now >= ot and now <= ct:
             return True
 
-        return True
+        return False
 
     def get_sleep_time(self):
         if self.is_regular_trading_hours():
@@ -176,9 +176,10 @@ class App(QWidget):
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
         table.setSelectionMode(QAbstractItemView.SingleSelection)
+
         table.doubleClicked.connect(self.on_table_double_clcked)
         #table.clicked()
-        #table.pressed.connect(self.on_contextMenuEvent)
+        table.pressed.connect(self.on_contextMenuEvent)
         self.table = table
         model.setColumnCount(len(self.headers))
         self.layout.addWidget(table)
@@ -203,24 +204,43 @@ class App(QWidget):
 
         self.show()
 
-    def on_contextMenuEvent(self, index):
+    def mousePressEvent(self, event):
+        super.mousePressedEvent(event)
+        print("here")
+    def on_contextMenuEvent(self, index, **kwargs):
         self.menu = QMenu(self)
+        print(kwargs)
         removeEntry = QAction('Delete', self)
-        removeEntry.triggered.connect(lambda: self.remove_row(index))
+        #index  = self.table.selectedIndexes()
+        #if event.button() == Qt.RightButton:
+        removeEntry.triggered.connect(lambda event: self.remove_row(event, index))
         self.menu.addAction(removeEntry)
         # add other required actions
         self.menu.popup(QCursor.pos())
+        self.table.clearSelection()
 
-    def remove_row(self, index):
-        print("here", index)
+    def remove_row(self, event, index):
+        print("here", event)
         try:
+            #if event.button() == Qt.RightButton:
             print(self.model.removeRow(index.row()))
+            self.table.clearSelection()
         except:
             traceback.print_exc()
 
 
     def check_for_expired(self):
         #print("check for expired ", self.model.rowCount())
+        if self.isMinimized():
+            print("not visible")
+            return
+        if not self.isVisible() or self.isHidden():
+            print("not visible -- hidden", self.isVisible(), self.isHidden())
+            return
+
+        #else:
+        #    print("huh visible")
+
         for x in range(0, self.model.rowCount()):
             index = self.model.index(x, self.get_row_index("Symbol"))
             symbol = index.data()
@@ -240,6 +260,9 @@ class App(QWidget):
             index = self.model.index(x, self.get_row_index("Source"))
             self.model.setData(index, QBrush(Qt.gray), Qt.BackgroundRole)
             self.pending_req[symbol] = symbol
+            if self.table.isRowHidden(x):
+                print("row ", x, "hidden")
+                continue
 
             try:
                 worker = Worker(symbol, self, self.proxies)
@@ -259,7 +282,7 @@ class App(QWidget):
             traceback.print_exc()
 
     def on_table_double_clcked(self, index):
-        print("double clicked", index.row(), index.column())
+        #print("double clicked", index.row(), index.column())
         try :
             browser = Second(self)
             #browser = QWebEngineView(self)
@@ -317,7 +340,7 @@ class App(QWidget):
         self.model.setData(index, QBrush(color), Qt.BackgroundRole)
     def on_result(self, symbol, result):
         try:
-            print("on_result", symbol)
+            #print("on_result", symbol)
             headers = [self.model.headerData(x, Qt.Horizontal) for x in range(0, self.model.columnCount())]
             now = pd.to_datetime(datetime.datetime.now())
             mapping = {
@@ -376,7 +399,7 @@ class App(QWidget):
             traceback.print_exc()
 
     def on_complete(self, symbol):
-        print("thread complete", symbol)
+        #print("thread complete", symbol)
         del self.pending_req[symbol]
 
     def get_details(self, symbol):
