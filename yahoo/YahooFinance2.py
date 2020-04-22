@@ -24,6 +24,8 @@ class YahooFinance:
         self.query_time = None
         self.meta = None
         self.df = {}
+        self.close = None
+        self.last_price = None
 
     def clear(self):
         self.crumb = None
@@ -38,7 +40,9 @@ class YahooFinance:
             self.url_symbol = self.url_symbol + args
         #self.symbol = symbol
         #print(self.url_symbol," startdate=", YahooFinance.get_epoch(self.start_date), self.symbol)
-        with  requests.get(self.url_symbol, *self.kwargs) as response:
+        if not kwargs :
+            kwargs = self.kwargs
+        with  requests.get(self.url_symbol, **kwargs) as response:
             #print(response.cookies)
             #for x in response.cookies:
             #    print("Entries", x.name, x.value)
@@ -64,9 +68,9 @@ class YahooFinance:
             timestamp = chart['chart']['result'][0]['timestamp']
             meta = chart['chart']['result'][0]['meta']
 
-            close = meta['previousClose']
-            price = meta['regularMarketPrice']
-            print(close, price)
+            self.close = meta['previousClose']
+            self.last_price = meta['regularMarketPrice']
+            print(self.close, self.last_price)
 
             ts = pd.to_datetime(timestamp, unit='s').tz_localize("utc").tz_convert("US/Eastern").tz_localize(None)
             ts.name = "date"
@@ -185,7 +189,7 @@ class YahooFinance:
 if __name__ == "__main__":
     #https://query1.finance.yahoo.com//v8/finance/chart/AAPL?interval=1m&period1=1583283028&period2=1583887828
     y = YahooFinance( )
-    y.init("AAPL",interval="1m", args="&period1=1583283028&period2=1583887828")
+    y.init("AAPL",interval="1m", args="&period1=1583283028&period2=1583887828&includePrePost=true")
 
     y.df.to_csv("AAPL.csv")
 
