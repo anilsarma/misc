@@ -3,7 +3,7 @@ import datetime
 
 import pandas as pd
 import requests
-from apscheduler.schedulers.blocking import BlockingScheduler
+#from apscheduler.schedulers.blocking import BlockingScheduler
 from bs4 import BeautifulSoup as bs
 from dateutil.tz import tzlocal
 
@@ -250,6 +250,6 @@ if __name__ == "__main__":
 
 
     get_prices()
-    scheduler = BlockingScheduler()
-    scheduler.add_job(get_prices, 'interval', hours=1)
-    scheduler.start()
+    #scheduler = BlockingScheduler()
+    #scheduler.add_job(get_prices, 'interval', hours=1)
+    #scheduler.start()
