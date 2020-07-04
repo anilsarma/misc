@@ -20,6 +20,58 @@ def md5(fname):
 def now():
     return pd.Timestamp('now')
 
+def download_direct(outputfilename="rail_data.zip"):
+    #https://www.njtransit.com/rail_data.zip
+    try:
+        import io
+        data = io.BytesIO()
+    except:
+        import sys
+        print(sys.exc_info())
+        print("using strio io")
+        data = StringIO()
+    md5_old = None
+    if os.path.exists(outputfilename):
+        md5_old = md5(outputfilename)
+    with requests.session() as s:
+        r = s.get(r'https://www.njtransit.com/rail_data.zip',stream=True)
+        print(now(), "writing to ", os.path.abspath(outputfilename))
+        rail = open(outputfilename, "wb")
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:  # filter out keep-alive new chunks
+                data.write(chunk)
+                rail.write(chunk)
+        rail.close()
+        try:
+            print(now(), "download complete, size:", len(data), "(bytes)")
+        except:
+            print(now(), "download complete, size: unkown",  "(bytes)")
+
+    try:
+        data.seek(0)
+        zip = zipfile.ZipFile(data)
+        for x in zip.infolist():
+            print(now(), "\tchecking archive ", x.filename)
+            c = zip.open(x)
+            c.read(500)
+        print(now(), ("checking complete ", os.path.abspath(outputfilename)))
+
+        # check the previous mdf file.
+        md5_new = md5(outputfilename)
+        print(now(), "checksum old/new", md5_old, md5_new)
+        if md5_old != md5_new:
+            str = pd.Timestamp('now').strftime("%m/%d/%Y %H:%M:%S")
+            print(now(), "checksum changed, updating version.txt to:", str)
+
+            fp = open("version.txt", "w")
+            fp.write(str)
+            fp.close()
+
+        else:
+            print(now(), "checksum unchanged")
+    except Exception as e:
+        print("not a valid zip file", e)
+        raise e
 
 def download_file( user, password, outputfilename='rail_data.zip'):
     cj = cookielib.LWPCookieJar()
@@ -140,7 +192,9 @@ if __name__ == "__main__":
     if args.password is None:
         args.password = getpass.getpass("njtransit password:")
 
-    r = download_file( args.user, args.password, args.output)
+    #or = download_file( args.user, args.password, args.output)
+    r = download_direct(  args.output)
+ 
 
     exit(0)
 

@@ -79,7 +79,7 @@ while True:
         if point is None:
             point = now
         print(title)
-        if True:
+        if True: 
             print(point, now)
             if point == now: #nothing moved for a while
                 print("match did not move", point,  now)
