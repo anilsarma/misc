@@ -1,30 +1,56 @@
 import firebase_admin
-from firebase_admin import credentials, firestore
-from firebase_admin import db
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
+from firebase_admin import credentials, firestore
 
-cred = credentials.Certificate("timetransform-e722a-firebase-adminsdk-yqj1h-51ca067f21.json")
-firebase_admin.initialize_app(cred)
-db = firestore.client()
-#db = firestore.client()
-doc_ref = db.collection("amazon").document('ASINDB')
 
-doc = doc_ref.collections()
-# for x in dir(doc_ref):
-#     print(x)
-#print(doc.to_dict())
-dfs = []
-for x in doc:
-    #for y in x.where('asin', '==', 'B088BTZ77F').stream():
-    for y in x.stream():
-        dfs.append(y.to_dict())
+def get_asin_data(db):
+    #db = firestore.client()
+    doc_ref = db.collection("amazon").document('ASINDB')
+
+    doc = doc_ref.collections()
+    # for x in dir(doc_ref):
+    #     print(x)
+    #print(doc.to_dict())
+    dfs = []
+    for x in doc:
+        #for y in x.where('asin', '==', 'B088BTZ77F').stream():
+       # for y in x.stream():
+        #    dfs.append(y.to_dict())
+        df0 = [y.to_dict() for y in x.stream()]
+        dfs = dfs + df0
+
+    #dfs = [y.to_dict() for y in x.stream() for x in doc]
+    #dfs = [y.to_dict() for y in x.stream()]
+    print(dfs)
+    df = pd.DataFrame(dfs)
+    return df
+
+def get_asin(db):
+
+    dfs=[]
+    doc = db.collection("amazon").document("ASINS").collections()
+    for x in doc:
+        df0 = [y.to_dict() for y in x.stream()]
+        dfs = dfs + df0
+    #print(dfs)
+    df = pd.DataFrame(dfs)
+    return df
+
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 #print(dfs)
-df = pd.DataFrame(dfs)
+
+cred = credentials.Certificate("timetransform-e722a-firebase-adminsdk-yqj1h-51ca067f21.json")
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+df_asin = get_asin(db)
+print(df_asin.asin)
+exix
+
+df = get_asin_data(db)
 df.date = pd.to_datetime(df.date)
 df = df.set_index(['date', 'asin'])
 

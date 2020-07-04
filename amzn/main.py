@@ -47,6 +47,16 @@ header2 = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36'
 }
 
+def get_asin(db):
+
+    dfs=[]
+    doc = db.collection("amazon").document("ASINS").collections()
+    for x in doc:
+        df0 = [y.to_dict() for y in x.stream()]
+        dfs = dfs + df0
+    #print(dfs)
+    df = pd.DataFrame(dfs)
+    return df
 
 def download_file(asin):
     url = "https://www.amazon.com/dp/{}".format(asin)
@@ -117,15 +127,15 @@ def download_file(asin):
                 return data
 
         if not good:
-            with open("error_{}.html".format(asin), "w") as fp:
-                print("soup", str(soup))
-                try:
-                    fp.write(str(soup))
-                except:
-                    try:
-                        fp.write(str(soup).decode("utf-8"))
-                    except:
-                        print(now(), "write failed for ", asin)
+            #with open("error_{}.html".format(asin), "w") as fp:
+            print("soup", str(soup))
+                # try:
+                #     fp.write(str(soup))
+                # except:
+                #     try:
+                #         fp.write(str(soup).decode("utf-8"))
+                #     except:
+                #         print(now(), "write failed for ", asin)
 
             print("we did not get a valid response from the server or the server has changed.")
     return None
@@ -137,20 +147,25 @@ from firebase_admin import firestore
 import random
 
 cred = None
+db = None
 
+def init():
+    global cred
+    global db
+    try:
+        cred = credentials.Certificate("timetransform-e722a-firebase-adminsdk-yqj1h-51ca067f21.json")
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+    except:
+        pass
 
 def save_data(asins):
     # Use the application default credentials
     # cred = credentials.ApplicationDefault()
-    global cred
-    try:
-        cred = credentials.Certificate("timetransform-e722a-firebase-adminsdk-yqj1h-51ca067f21.json")
-        firebase_admin.initialize_app(cred)
-    except:
-        pass
 
+    init()
     saved = []
-    db = firestore.client()
+
     import time
 
     # for asin in ["B07G2DFZZG"]:
@@ -217,7 +232,10 @@ def get_snapshot(request):
 
 if __name__ == "__main__":
     def get_prices():
-        df = pd.read_csv("asin.txt")
+        init()
+
+        #df = pd.read_csv("asin.txt")
+        df = get_asin(db)
         asins = list(df.asin.drop_duplicates())
         # asins = asins[]
         t0 = now()
