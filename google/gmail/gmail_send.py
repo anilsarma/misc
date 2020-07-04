@@ -93,6 +93,6 @@ if __name__ == "__main__":
     gmail_service = build('gmail', 'v1', http=http)
 
     send_email( gmail_service, args.to, args.from_gmail,  args.subject, args.body)
-    print args.body
+    print (args.body)
 
 

@@ -4,7 +4,7 @@ client_secret.json
 from the google gmail API
 
 
-You will need to create a project in: and thenf follow the instructions for creating a client_secret.json
+You will need to create a project in: and then follow the instructions for creating a client_secret.json
 https://console.developers.google.com/project
 
 

@@ -56,6 +56,7 @@ class Worker(QRunnable):
             self.signals.result.emit (self.symbol, result)
         except:
 
+            print("error for ", self.symbol)
             traceback.print_exc()
             exectype, value = sys.exc_info()[:2]
             self.signals.error.emit( (exectype, value, traceback.format_exc()))
@@ -94,8 +95,16 @@ class Second(QDialog):#QMainWindow QDialog
 
 #self.ui.lineEdit.setText("")
 class App(QWidget):
-    def __init__(self, proxies=None):
+    def __init__(self, config_file, proxies=None):
         super(App, self).__init__()
+        config_dir = os.path.dirname(config_file)
+        if not os.path.exists(config_dir):
+            os.makedirs(config_dir)
+
+
+        self.config_file = config_file
+        self.df_config = self.read_config()
+
         self.proxies = proxies
         self.title = "Yahoo Maket Prices " + time.ctime(os.path.getmtime(__file__))
         self.left = 100
@@ -115,6 +124,23 @@ class App(QWidget):
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.recurring_timer)
         self.timer.start()
+
+
+
+    def read_config(self):
+        self.symbols = []
+        if os.path.exists(self.config_file):
+            df =  pd.read_csv(self.config_file, index_col=['name'])
+            if 'symbols' in df.index:
+                self.symbols = df.loc["symbols"].value.split(",")
+            return df
+        df = pd.DataFrame(columns=['name', "value"]).set_index("name")
+        return df
+    def save_config(self):
+        print("Saving config\n", self.df_config)
+        print("Saving config\n", self.symbols)
+        self.df_config.loc["symbols", "value"] = ",".join(self.symbols)
+        self.df_config.to_csv(self.config_file, index=True)
 
     def is_regular_trading_hours(self):
         now = pd.to_datetime(datetime.datetime.now())
@@ -186,8 +212,15 @@ class App(QWidget):
         self.model= model
 
 
+        print(self.df_config)
 
-        model.appendRow(self.get_details("OEF"))
+        if len(self.symbols) == 0:
+            model.appendRow(self.get_details("OEF"))
+        else:
+
+            for s in self.symbols:
+                model.appendRow(self.get_details(s))
+
        # table.verticalHeader().setDefaultSelectionSize(20)
         table.verticalHeader().setVisible(False)
         [table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch) for i in range(0, len(self.headers))]
@@ -211,16 +244,29 @@ class App(QWidget):
         self.menu = QMenu(self)
         print(kwargs)
         removeEntry = QAction('Delete', self)
+        upEntry = QAction('Up', self)
+        downEntry = QAction('Down', self)
         #index  = self.table.selectedIndexes()
         #if event.button() == Qt.RightButton:
         removeEntry.triggered.connect(lambda event: self.remove_row(event, index))
+        upEntry.triggered.connect(lambda event: self.move_row_up(event, index))
+        downEntry.triggered.connect(lambda event: self.move_row_down(event, index))
         self.menu.addAction(removeEntry)
+        self.menu.addAction(upEntry)
+        self.menu.addAction(downEntry)
         # add other required actions
         self.menu.popup(QCursor.pos())
         self.table.clearSelection()
 
     def remove_row(self, event, index):
-        print("here", event)
+        print("here", event, index.row())
+        try:
+            idx = int(index.row())
+            del self.symbols[idx:idx+1]
+            self.save_config()
+        except:
+            traceback.print_exc()
+
         try:
             #if event.button() == Qt.RightButton:
             print(self.model.removeRow(index.row()))
@@ -228,6 +274,62 @@ class App(QWidget):
         except:
             traceback.print_exc()
 
+    def move_row_up(self, event, index):
+        print("here", event, index.row())
+        try:
+            idx = int(index.row())
+            if idx == 0:
+                return
+        except:
+            traceback.print_exc()
+            return
+
+        try:
+            #if event.button() == Qt.RightButton:
+            idx_from = self.model.index(idx, 0)
+            idx_to = self.model.index(idx-1, 0)
+            #self.model.moveRow(idx_from, idx_from.row(), idx_to, 1)
+            row = self.model.takeRow(idx_from.row())
+            #idx_to.parent.appendRow(row)
+            self.model.insertRow(int(idx_to.row()), row)
+            #print(self.model.removeRow(index.row()))
+            #self.table.clearSelection()
+            tmp = self.symbols[idx_from.row()]
+            self.symbols[idx_from.row()] = self.symbols[idx_to.row()]
+            self.symbols[idx_to.row()] = tmp
+            self.save_config()
+        except:
+            traceback.print_exc()
+
+    def move_row_down(self, event, index):
+        print("here", event, index.row())
+        try:
+            idx = int(index.row())
+            if idx == len(self.symbols)-1:
+                return
+        except:
+            traceback.print_exc()
+            return
+
+        try:
+            #if event.button() == Qt.RightButton:
+            idx_from = self.model.index(idx, 0)
+            idx_to = self.model.index(idx+1, 0)
+
+
+            #self.model.moveRow(idx_from, idx_from.row(), idx_to, 1)
+            row = self.model.takeRow(idx_to.row())
+            #idx_to.parent.appendRow(row)
+            self.model.insertRow(int(idx_from.row()), row)
+            #print(self.model.removeRow(index.row()))
+            #self.table.clearSelection()
+
+            tmp = self.symbols[idx_from.row()]
+            self.symbols[idx_from.row()] = self.symbols[idx_to.row()]
+            self.symbols[idx_to.row()] = tmp
+            self.save_config()
+        except:
+            traceback.print_exc()
 
     def check_for_expired(self):
         #print("check for expired ", self.model.rowCount())
@@ -300,6 +402,8 @@ class App(QWidget):
     def on_add_symbol(self):
         tokens = self.symbol_edit.text().split(",")
         try:
+
+
             for value in tokens:
                 value = value.strip()
                 if len(value)==0:
@@ -314,6 +418,10 @@ class App(QWidget):
                         break
                 if not found:
                     self.model.appendRow(self.get_details(value))
+                    self.symbols.append(value)
+
+            self.save_config()
+
         except:
             traceback.print_exc()
 
@@ -415,9 +523,13 @@ class App(QWidget):
 
 if __name__ == "__main__":
     df_holiday = pd.read_csv("holiday.csv", index_col=["date"])
+    home_dir = os.path.expanduser("~")
+    config_file = os.path.join(home_dir, ".yahoo_gui/config.csv")
+
+
     print(df_holiday.index)
     print(open_time, close_time)
 
     qapp = QApplication(sys.argv)
-    app = App()
+    app = App(config_file)
     sys.exit(qapp.exec_())

@@ -1,0 +1,6 @@
+Flask==1.0.2
+# Function dependencies, for example:
+# package>=version
+bs4==0.0.1
+pandas
+firebase_admin
