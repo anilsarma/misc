@@ -1,10 +1,10 @@
 import requests
 from bs4 import BeautifulSoup as bs
-import cookielib
-from  urllib2 import urlopen
+import cookiejar as cookielib
+from  urllib.request import urlopen
 import argparse
 import getpass
-import StringIO
+from io import StringIO
 import zipfile
 import os
 import hashlib
@@ -17,6 +17,8 @@ def md5(fname):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
+def raw_input(*argv, **args):
+     return input(argv, args)
 def now():
     return pd.Timestamp('now')
 
@@ -83,7 +85,7 @@ def download_file( user, password, outputfilename='rail_data.zip'):
         }
     url = r'https://www.njtransit.com/mt/mt_servlet.srv?hdnPageAction=MTDevLoginSubmitTo'
     if payload['password'] is None:
-        print "password is not set"
+        print ("password is not set")
         exit(1)
 
     data = StringIO.StringIO()
@@ -92,61 +94,61 @@ def download_file( user, password, outputfilename='rail_data.zip'):
         md5_old = md5(outputfilename)
 
     with requests.session() as s:
-        print now(), "logging into ", url
+        print (now(), "logging into ", url)
         response_post = s.post(url, data=payload)
         #print response_post.text
         soup = bs(response_post.text, 'html.parser')
-        print now(), "received response"
+        print (now(), "received response")
         good = False
         # go through the anchors in the page and find the one we want.
         for i, link in enumerate(soup.findAll('a')):
             _FULLURL = link.get('href')
             if 'mt_servlet.srv?hdnPageAction=MTDevResourceDownloadTo&Category=rail' in _FULLURL:
                 #print now(), (_FULLURL)
-                print now(), "found the download link"
+                print (now(), "found the download link")
                 good = True
 
-        print now(), "cookies", s.cookies
+        print (now(), "cookies", s.cookies)
         if not good:
             print ("we did not get a valid response from the server or the server has changed.")
             exit(-1)
 
-        print now(), "starting download of rail data"
+        print (now(), "starting download of rail data")
         r = s.get(r'https://www.njtransit.com/mt/mt_servlet.srv?hdnPageAction=MTDevResourceDownloadTo&Category=rail', stream=True)
-        print now(), "writing to ", os.path.abspath(outputfilename)
+        print (now(), "writing to ", os.path.abspath(outputfilename))
         rail = open(outputfilename, "w")
         for chunk in r.iter_content(chunk_size=1024):
             if chunk: # filter out keep-alive new chunks
                 data.write(chunk)
                 rail.write(chunk)
         rail.close()
-        print now(), "download complete, size:", data.len, "(bytes)"
+        print (now(), "download complete, size:", data.len, "(bytes)")
 
 
     try:
         data.seek(0)
         zip = zipfile.ZipFile(data)
         for x in zip.infolist():
-            print now(), "\tchecking archive ", x.filename
+            print (now(), "\tchecking archive ", x.filename)
             c = zip.open(x)
             c.read(500)
-        print now(), ("checking complete ", os.path.abspath(outputfilename))
+        print (now(), ("checking complete ", os.path.abspath(outputfilename)))
 
         # check the previous mdf file.
         md5_new = md5(outputfilename)
-        print now(), "checksum old/new", md5_old, md5_new
+        print (now(), "checksum old/new", md5_old, md5_new)
         if md5_old != md5_new:
             str = pd.Timestamp('now').strftime("%m/%d/%Y %H:%M:%S")
-            print now(), "checksum changed, updating version.txt to:", str
+            print (now(), "checksum changed, updating version.txt to:", str)
 
             fp = open("version.txt", "w")
             fp.write( str)
             fp.close()
             
         else:
-            print now(), "checksum unchanged"
+            print (now(), "checksum unchanged")
     except Exception as e:
-        print "not a valid zip file", e
+        print ("not a valid zip file", e)
         raise  e
 
 
@@ -161,9 +163,10 @@ if __name__ == "__main__":
     login_files = [ x for x in [ "login.preferences", ".login", os.path.join( os.path.expanduser("~"), ".njt", "login.preferences") ] if os.path.exists(x ) ]
     #print login_files
 
+    print(login_files)
     if login_files: #os.path.exists(".login"):
         login_filename = login_files[0]
-        print "using ", login_filename
+        print ("using ", login_filename)
         # user,password
         # <username>,<password>
         df = pd.read_csv(login_filename, sep='=', header=None, names=['field', 'value'])
@@ -187,7 +190,7 @@ if __name__ == "__main__":
                 args.password = df.iloc[0].password
 
     if args.user is None:
-        args.user = raw_input("njtransit user:")
+        args.user = input("njtransit user:")
 
     if args.password is None:
         args.password = getpass.getpass("njtransit password:")

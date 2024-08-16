@@ -35,7 +35,8 @@ def send_email(gmail_service, to, sender, subject, body):
     email['to'] = to
     if sender is not None:email['from'] = sender
     email['subject'] = subject
-    email = {'raw': base64.b64encode(email.as_string())}
+    email = {'raw': base64.b64encode(email.as_string().encode("utf-8")).decode("utf-8")}
+    print(email)
     result = gmail_service.users().messages().send(userId='me', body=email).execute()
     print(result)
 
