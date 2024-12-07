@@ -1,4 +1,4 @@
-Flask==1.0.2
+Flask==2.3.2
 # Function dependencies, for example:
 # package>=version
 bs4==0.0.1
